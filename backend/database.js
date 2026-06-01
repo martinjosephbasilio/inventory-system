@@ -27,7 +27,7 @@ const initDB = async () => {
       )
     `);
 
-    // Create movements table
+        // Create movements table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS movements (
         id SERIAL PRIMARY KEY,
@@ -40,10 +40,13 @@ const initDB = async () => {
         base_delta INTEGER NOT NULL,
         note TEXT,
         sell_price DECIMAL(10,2),
-        total_sales DECIMAL(10,2)
+        total_sales DECIMAL(10,2),
+        customer_name VARCHAR(255)
       )
     `);
 
+    // Add customer_name column if not exists (for existing tables)
+    await pool.query(`ALTER TABLE movements ADD COLUMN IF NOT EXISTS customer_name VARCHAR(255)`);
     // Create expenses table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS expenses (
