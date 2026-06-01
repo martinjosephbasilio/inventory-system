@@ -33,7 +33,7 @@ const authenticateToken = (req, res, next) => {
 
 // ============= AUTH API =============
 
-// Register endpoint - users are 'pending' by default
+// Register endpoint
 app.post('/api/auth/register', async (req, res) => {
   const { username, password, full_name, email } = req.body;
   
@@ -57,7 +57,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Login endpoint with status check
+// Login endpoint
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   
@@ -70,26 +70,21 @@ app.post('/api/auth/login', async (req, res) => {
     
     const user = result.rows[0];
     
-    // Check if account is pending
     if (user.status === 'pending') {
       return res.status(401).json({ error: '⏳ Your account is pending approval. Please wait for the administrator to approve your account.' });
     }
     
-    // Check if account is rejected
     if (user.status === 'rejected') {
       return res.status(401).json({ error: '❌ Your account has been rejected. Please contact the administrator for assistance.' });
     }
     
-    // Compare password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
     
-    // Update last login
     await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
     
-    // Generate token
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, full_name: user.full_name, status: user.status },
       JWT_SECRET,
@@ -103,18 +98,142 @@ app.post('/api/auth/login', async (req, res) => {
         id: user.id,
         username: user.username,
         full_name: user.full_name,
+        email: user.email,
         role: user.role,
-        status: user.status
+        status: user.status,
+        created_at: user.created_at,
+        last_login: user.last_login
       }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}); 
+});
+
+// ============= PROFILE ENDPOINT - UPDATED (kaya na ang username, full_name, email) =============
+app.put('/api/auth/profile', authenticateToken, async (req, res) => {
+  const { full_name, username, email } = req.body;
+  const userId = req.user.id;
+  
+  try {
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+    
+    // Update username
+    if (username !== undefined && username !== req.user.username) {
+      // Validate username format
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        return res.status(400).json({ error: 'Username can only contain letters, numbers, and underscore' });
+      }
+      if (username.length < 3 || username.length > 20) {
+        return res.status(400).json({ error: 'Username must be 3-20 characters' });
+      }
+      
+      // Check if username already exists
+      const existingUser = await pool.query('SELECT id FROM users WHERE username = $1 AND id != $2', [username, userId]);
+      if (existingUser.rows.length > 0) {
+        return res.status(400).json({ error: 'Username already taken' });
+      }
+      updates.push(`username = $${paramCount++}`);
+      values.push(username);
+    }
+    
+    // Update email
+    if (email !== undefined) {
+      if (email) {
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return res.status(400).json({ error: 'Invalid email format' });
+        }
+        
+        // Check if email already exists
+        const existingEmail = await pool.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, userId]);
+        if (existingEmail.rows.length > 0) {
+          return res.status(400).json({ error: 'Email already in use' });
+        }
+      }
+      updates.push(`email = $${paramCount++}`);
+      values.push(email || null);
+    }
+    
+    // Update full name
+    if (full_name !== undefined) {
+      if (full_name.length < 2 || full_name.length > 50) {
+        return res.status(400).json({ error: 'Full name must be 2-50 characters' });
+      }
+      updates.push(`full_name = $${paramCount++}`);
+      values.push(full_name);
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    values.push(userId);
+    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount}`;
+    await pool.query(query, values);
+    
+    // Get updated user data
+    const updatedUser = await pool.query('SELECT id, username, full_name, email, role, status, created_at, last_login FROM users WHERE id = $1', [userId]);
+    
+    // Generate new token with updated info
+    const newToken = jwt.sign(
+      { 
+        id: updatedUser.rows[0].id, 
+        username: updatedUser.rows[0].username, 
+        role: updatedUser.rows[0].role, 
+        full_name: updatedUser.rows[0].full_name, 
+        status: updatedUser.rows[0].status 
+      },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Profile updated successfully',
+      token: newToken,
+      user: updatedUser.rows[0]
+    });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Change password
+app.put('/api/auth/change-password', authenticateToken, async (req, res) => {
+  const { current_password, new_password } = req.body;
+  const userId = req.user.id;
+  
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const user = result.rows[0];
+    
+    const validPassword = await bcrypt.compare(current_password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    
+    const samePassword = await bcrypt.compare(new_password, user.password);
+    if (samePassword) {
+      return res.status(400).json({ error: 'New password must be different from current password' });
+    }
+    
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
+    
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('Error changing password:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ============= ADMIN USER MANAGEMENT ENDPOINTS =============
 
-// Get all users (admin only)
 app.get('/api/auth/users', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
@@ -128,7 +247,6 @@ app.get('/api/auth/users', authenticateToken, async (req, res) => {
   }
 });
 
-// Get pending users count (admin only)
 app.get('/api/auth/pending-count', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
@@ -142,129 +260,55 @@ app.get('/api/auth/pending-count', authenticateToken, async (req, res) => {
   }
 });
 
-// Approve user (admin only)
 app.put('/api/auth/users/:id/approve', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   
-  const { id } = req.params;
-  
   try {
-    await pool.query("UPDATE users SET status = 'approved' WHERE id = $1", [id]);
+    await pool.query("UPDATE users SET status = 'approved' WHERE id = $1", [req.params.id]);
     res.json({ success: true, message: 'User approved successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Reject user (admin only)
 app.put('/api/auth/users/:id/reject', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   
-  const { id } = req.params;
-  
   try {
-    await pool.query("UPDATE users SET status = 'rejected' WHERE id = $1", [id]);
+    await pool.query("UPDATE users SET status = 'rejected' WHERE id = $1", [req.params.id]);
     res.json({ success: true, message: 'User rejected' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete user (admin only)
 app.delete('/api/auth/users/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   
-  const { id } = req.params;
-  
-  if (parseInt(id) === req.user.id) {
+  if (parseInt(req.params.id) === req.user.id) {
     return res.status(400).json({ error: 'Cannot delete your own account' });
   }
   
   try {
-    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
     res.json({ deleted: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ============= PROFILE ENDPOINTS =============
-
-// Update profile (full name)
-app.put('/api/auth/profile', authenticateToken, async (req, res) => {
-  const { full_name } = req.body;
-  const userId = req.user.id;
-  
-  try {
-    await pool.query('UPDATE users SET full_name = $1 WHERE id = $2', [full_name, userId]);
-    res.json({ success: true, message: 'Profile updated successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update email
-app.put('/api/auth/update-email', authenticateToken, async (req, res) => {
-  const { email } = req.body;
-  const userId = req.user.id;
-  
-  try {
-    await pool.query('UPDATE users SET email = $1 WHERE id = $2', [email, userId]);
-    res.json({ success: true, message: 'Email updated successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Change password
-app.put('/api/auth/change-password', authenticateToken, async (req, res) => {
-  const { current_password, new_password } = req.body;
-  const userId = req.user.id;
-  
-  try {
-    // Get current user
-    const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-    const user = result.rows[0];
-    
-    // Verify current password
-    const validPassword = await bcrypt.compare(current_password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Current password is incorrect' });
-    }
-    
-    // Check if new password is different
-    const samePassword = await bcrypt.compare(new_password, user.password);
-    if (samePassword) {
-      return res.status(400).json({ error: 'New password must be different from current password' });
-    }
-    
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(new_password, 10);
-    
-    // Update password
-    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
-    
-    res.json({ success: true, message: 'Password changed successfully' });
-  } catch (err) {
-    console.error('Error changing password:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // ============= FORGOT PASSWORD ENDPOINTS =============
 
-// Forgot password - request reset
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   
   try {
-    // Add email column and reset columns if not exists
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP`);
@@ -277,7 +321,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     
     const user = result.rows[0];
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = new Date(Date.now() + 3600000); // 1 hour from now
+    const resetExpires = new Date(Date.now() + 3600000);
     
     await pool.query(
       'UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3',
@@ -295,7 +339,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-// Reset password with token
 app.post('/api/auth/reset-password', async (req, res) => {
   const { token, new_password } = req.body;
   
@@ -324,7 +367,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-// Verify token endpoint
 app.get('/api/auth/verify', authenticateToken, (req, res) => {
   res.json({ valid: true, user: req.user });
 });
@@ -342,7 +384,6 @@ setInterval(async () => {
 // ============= INITIALIZE DATABASE =============
 async function initializeDatabase() {
   try {
-    // Create users table with STATUS column
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -359,11 +400,9 @@ async function initializeDatabase() {
       )
     `);
     
-    // Update existing users to 'approved' and add email for admin
     await pool.query(`UPDATE users SET status = 'approved' WHERE status IS NULL`);
     await pool.query(`UPDATE users SET email = 'admin@inrpackaging.com' WHERE username = 'admin' AND email IS NULL`);
     
-    // Check if admin exists, if not create
     const adminCheck = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);
     if (adminCheck.rows.length === 0) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -374,7 +413,6 @@ async function initializeDatabase() {
       console.log('✅ Default admin user created (admin/admin123)');
     }
     
-    // Create items table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS items (
         id VARCHAR(50) PRIMARY KEY,
@@ -389,7 +427,6 @@ async function initializeDatabase() {
       )
     `);
     
-    // Create movements table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS movements (
         id SERIAL PRIMARY KEY,
@@ -407,7 +444,6 @@ async function initializeDatabase() {
       )
     `);
     
-    // Create expenses table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS expenses (
         id SERIAL PRIMARY KEY,
@@ -419,7 +455,6 @@ async function initializeDatabase() {
       )
     `);
     
-    // Check if there are items
     const itemsCount = await pool.query('SELECT COUNT(*) FROM items');
     if (parseInt(itemsCount.rows[0].count) === 0) {
       const defaultItems = [
@@ -444,7 +479,11 @@ async function initializeDatabase() {
   } catch (err) {
     console.error('❌ Error initializing database:', err.message);
   }
-}
+} 
+// Health check endpoint para sa UptimeRobot
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // ============= PROTECTED API ROUTES =============
 
