@@ -1,12 +1,12 @@
 const { Pool } = require('pg');
 
-// PostgreSQL connection - PALITAN ANG PASSWORD MO!
+// PostgreSQL connection - Gamit ang Railway environment variables
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'inventory_db',
-  password: 'dragonpack!inr',  // ← PALITAN MO ITO sa password na nilagay mo
-  port: 5432,
+  user: process.env.PGUSER || 'postgres',
+  host: process.env.PGHOST || 'postgres.railway.internal',
+  database: process.env.PGDATABASE || 'railway',
+  password: process.env.PGPASSWORD || 'tmOYjAxXPyaOBMUceRCRsEZWsxhrqVOJ',
+  port: process.env.PGPORT || 5432,
 });
 
 // Create tables function
