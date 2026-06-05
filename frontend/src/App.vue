@@ -95,7 +95,7 @@
   </div>
   <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer;">
     <input type="checkbox" v-model="isAutoRefreshEnabled" style="margin: 0;">
-    Auto-refresh (5 sec)
+    Auto-refresh (10 sec)
   </label>
   <button @click="refreshAllData" style="background: #2c3e50; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
     <i class="fas fa-refresh"></i> Refresh Now
@@ -301,7 +301,7 @@ onMounted(() => {
     if (isAutoRefreshEnabled.value && isLoggedIn.value) {
       refreshAllData()
     }
-  }, 5000) // 5 seconds
+  }, 10000) // 5 seconds
 })
 
 // Clean up auto-refresh when app unmounts
