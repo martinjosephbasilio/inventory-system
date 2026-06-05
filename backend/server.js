@@ -130,6 +130,7 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
         return res.status(400).json({ error: 'Username must be 3-20 characters' });
       }
       
+      
       // Check if username already exists
       const existingUser = await pool.query('SELECT id FROM users WHERE username = $1 AND id != $2', [username, userId]);
       if (existingUser.rows.length > 0) {
@@ -202,7 +203,26 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
+// ============= GET CURRENT USER INFO =============
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  
+  try {
+    const result = await pool.query(
+      'SELECT id, username, full_name, email, role, status, created_at, last_login FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error fetching user:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 // Change password
 app.put('/api/auth/change-password', authenticateToken, async (req, res) => {
   const { current_password, new_password } = req.body;

@@ -135,19 +135,22 @@ const refreshAllData = async () => {
     // Refresh dashboard data
     await store.fetchDashboard()
     
-    // Refresh current user data (para mag-update ang profile name)
+    // 🔴 IMPORTANT: Refresh current user data (para mag-update ang sidebar name)
     const token = localStorage.getItem('token')
-    if (token && user.value) {
+    if (token) {
       try {
         const response = await axios.get('https://inventory-system-backend-production-0549.up.railway.app/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
         })
         if (response.data) {
+          // Update user object
           user.value = response.data
+          // Update localStorage
           localStorage.setItem('user', JSON.stringify(response.data))
+          console.log('User data refreshed:', response.data.full_name)
         }
       } catch (err) {
-        console.log('User refresh skipped:', err.message)
+        console.log('User refresh error:', err.message)
       }
     }
     
