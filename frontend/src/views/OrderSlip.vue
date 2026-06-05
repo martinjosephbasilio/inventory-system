@@ -855,7 +855,7 @@ onMounted(async () => {
       lastRefresh.value = new Date()
       console.log('Auto-refreshed orders at:', lastRefresh.value.toLocaleTimeString())
     }
-  }, 10000) // 10 seconds
+  }, 5000) // 5 seconds
 })
 
 // Clean up pag umalis sa page
