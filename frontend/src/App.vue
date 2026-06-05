@@ -85,6 +85,24 @@
     <div v-if="!isLoggedIn" class="login-wrapper">
       <router-view />
     </div>
+    <!-- Global Auto-Refresh Indicator -->
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-bottom: 15px; padding: 8px 12px; background: #e9ecef; border-radius: 8px;">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <i class="fas fa-sync-alt" style="color: #2c3e50;"></i>
+    <span style="font-size: 12px; color: #2c3e50;">
+      Last refresh: {{ lastGlobalRefresh.toLocaleTimeString() }}
+    </span>
+  </div>
+  <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer;">
+    <input type="checkbox" v-model="isAutoRefreshEnabled" style="margin: 0;">
+    Auto-refresh (5 sec)
+  </label>
+  <button @click="refreshAllData" style="background: #2c3e50; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+    <i class="fas fa-refresh"></i> Refresh Now
+  </button>
+</div>
+
+<router-view />
 
     <!-- GLOBAL MODALS -->
     <ProfessionalModal ref="professionalModal" />
@@ -99,6 +117,46 @@ import { useInventoryStore } from './stores/inventory'
 import ProfessionalModal from './components/ProfessionalModal.vue'
 import Toast from './components/Toast.vue'
 import axios from 'axios'
+
+// ========== GLOBAL AUTO-REFRESH ==========
+const lastGlobalRefresh = ref(new Date())
+let globalRefreshInterval = null
+const isAutoRefreshEnabled = ref(true)
+
+// Function to refresh all important data
+const refreshAllData = async () => {
+  if (!isLoggedIn.value) return
+  
+  try {
+    // Refresh inventory stock
+    await store.fetchStock()
+    await store.fetchItems()
+    
+    // Refresh dashboard data
+    await store.fetchDashboard()
+    
+    // Refresh current user data (para mag-update ang profile name)
+    const token = localStorage.getItem('token')
+    if (token && user.value) {
+      try {
+        const response = await axios.get('https://inventory-system-backend-production-0549.up.railway.app/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (response.data) {
+          user.value = response.data
+          localStorage.setItem('user', JSON.stringify(response.data))
+        }
+      } catch (err) {
+        console.log('User refresh skipped:', err.message)
+      }
+    }
+    
+    lastGlobalRefresh.value = new Date()
+    console.log('Auto-refresh at:', lastGlobalRefresh.value.toLocaleTimeString())
+  } catch (error) {
+    console.error('Auto-refresh error:', error)
+  }
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -232,6 +290,23 @@ onMounted(() => {
     store.fetchItems()
     store.fetchStock()
     store.fetchDashboard()
+  }
+  
+  // Start global auto-refresh every 5 seconds
+  if (globalRefreshInterval) clearInterval(globalRefreshInterval)
+  globalRefreshInterval = setInterval(() => {
+    if (isAutoRefreshEnabled.value && isLoggedIn.value) {
+      refreshAllData()
+    }
+  }, 5000) // 5 seconds
+})
+
+// Clean up auto-refresh when app unmounts
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  if (globalRefreshInterval) {
+    clearInterval(globalRefreshInterval)
+    globalRefreshInterval = null
   }
 })
 </script>
