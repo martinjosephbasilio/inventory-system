@@ -229,7 +229,7 @@ import { ref, computed, onMounted, inject } from 'vue'
 import axios from 'axios'
 
 const store = useInventoryStore()
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 const showToast = inject('showToast')
 const showConfirm = inject('showConfirm')
 
@@ -894,5 +894,69 @@ code {
 
 .btn-save:hover {
   background: #1a252f;
+}
+/* PAMPALIIT LANG NG TABLE ROWS - IDAGDAG LANG SA DULO */
+
+.movements-table th {
+  padding: 0.4rem 0.3rem !important;
+  font-size: 0.65rem !important;
+}
+
+.movements-table td {
+  padding: 0.3rem 0.25rem !important;
+  font-size: 0.65rem !important;
+}
+
+.badge-in, .badge-out {
+  padding: 2px 6px !important;
+  font-size: 0.6rem !important;
+}
+
+.btn-edit, .btn-delete {
+  padding: 3px 6px !important;
+  font-size: 0.55rem !important;
+}
+
+.filter-section {
+  padding: 0.8rem !important;
+}
+
+.filter-input {
+  padding: 4px 8px !important;
+  font-size: 0.65rem !important;
+}
+
+.filter-group label {
+  font-size: 0.6rem !important;
+}
+
+.summary-card {
+  padding: 0.4rem 0.6rem !important;
+}
+
+.summary-info strong {
+  font-size: 0.85rem !important;
+}
+
+.summary-info span {
+  font-size: 0.55rem !important;
+}
+
+.summary-icon {
+  font-size: 1rem !important;
+  width: 30px !important;
+}
+
+.card {
+  padding: 0.8rem !important;
+}
+
+.header-actions h3 {
+  font-size: 0.95rem !important;
+}
+
+.header-actions p {
+  font-size: 0.65rem !important;
+  margin-bottom: 0.8rem !important;
 }
 </style>

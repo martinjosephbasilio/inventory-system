@@ -7,7 +7,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 import axios from 'axios'
 
 // Set base URL for axios
-axios.defaults.baseURL = 'http://localhost:3000/api'
+axios.defaults.baseURL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 
 // Add token to requests if exists
 const token = localStorage.getItem('token')

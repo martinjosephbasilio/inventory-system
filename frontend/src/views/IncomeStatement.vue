@@ -136,7 +136,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 const store = useInventoryStore()
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 
 const selectedYear = ref(new Date().getFullYear())
 const availableYears = ref([2023, 2024, 2025, 2026, 2027])
@@ -584,5 +584,130 @@ onMounted(async () => {
     flex-direction: column;
     align-items: stretch;
   }
+}
+/* PAMPALIIT LANG NG INCOME STATEMENT - IDAGDAG SA DULO */
+
+.card {
+  padding: 0.8rem !important;
+}
+
+.header-actions {
+  margin-bottom: 0.8rem !important;
+}
+
+.header-actions h3 {
+  font-size: 0.95rem !important;
+  margin-bottom: 0.15rem !important;
+}
+
+.header-actions p {
+  font-size: 0.65rem !important;
+}
+
+.filter-section {
+  padding: 0.5rem !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.filter-row {
+  gap: 0.5rem !important;
+}
+
+.filter-group label {
+  font-size: 0.6rem !important;
+}
+
+.filter-input {
+  padding: 4px 8px !important;
+  font-size: 0.65rem !important;
+  min-width: 100px !important;
+}
+
+.btn-refresh {
+  padding: 4px 12px !important;
+  font-size: 0.65rem !important;
+}
+
+.stats-grid {
+  gap: 0.6rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.stat-card {
+  padding: 0.5rem 0.7rem !important;
+  gap: 0.5rem !important;
+}
+
+.stat-icon {
+  width: 35px !important;
+  height: 35px !important;
+  font-size: 1rem !important;
+}
+
+.stat-info h4 {
+  font-size: 0.55rem !important;
+  margin-bottom: 0.1rem !important;
+}
+
+.stat-info .value {
+  font-size: 0.9rem !important;
+}
+
+.stat-info small {
+  font-size: 0.5rem !important;
+}
+
+.table-responsive {
+  margin-bottom: 1rem !important;
+}
+
+.table-responsive h4 {
+  font-size: 0.8rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.income-table th {
+  padding: 0.4rem 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+.income-table td {
+  padding: 0.3rem 0.4rem !important;
+  font-size: 0.7rem !important;
+}
+
+.income-table tfoot th,
+.income-table tfoot td {
+  padding: 0.4rem 0.5rem !important;
+}
+
+.expenses-card {
+  padding: 0.6rem !important;
+}
+
+.expenses-card h4 {
+  font-size: 0.8rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.category-grid {
+  gap: 0.3rem !important;
+}
+
+.category-item {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+.category-name {
+  font-size: 0.65rem !important;
+}
+
+.category-name i {
+  font-size: 0.6rem !important;
+}
+
+.category-amount {
+  font-size: 0.65rem !important;
 }
 </style>

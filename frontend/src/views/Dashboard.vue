@@ -1030,4 +1030,276 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 }
+/* ===== COMPACT DASHBOARD - PAMPALIIT LANG ===== */
+
+/* Palitin ang main card */
+.card {
+  padding: 0.8rem !important;
+}
+
+/* Palitin ang header */
+.header-actions {
+  margin-bottom: 0.8rem !important;
+}
+
+.header-actions h3 {
+  font-size: 1rem !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.header-actions p {
+  font-size: 0.7rem !important;
+}
+
+/* Palitin ang stats grid */
+.stats-grid {
+  gap: 0.6rem !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Palitin ang stat cards */
+.stat-card {
+  padding: 0.5rem 0.7rem !important;
+  gap: 0.5rem !important;
+}
+
+.stat-icon {
+  width: 35px !important;
+  height: 35px !important;
+  font-size: 1rem !important;
+}
+
+.stat-info h4 {
+  font-size: 0.6rem !important;
+  margin-bottom: 0.1rem !important;
+}
+
+.stat-info .value {
+  font-size: 0.85rem !important;
+}
+
+.stat-info .unit {
+  font-size: 0.5rem !important;
+}
+
+.stat-info small {
+  font-size: 0.5rem !important;
+}
+
+/* Palitin ang two columns */
+.two-columns {
+  gap: 0.8rem !important;
+}
+
+.column {
+  gap: 0.8rem !important;
+}
+
+/* Palitin ang info cards */
+.info-card {
+  padding: 0.7rem !important;
+}
+
+.info-card h4 {
+  font-size: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+  padding-bottom: 0.3rem !important;
+}
+
+/* Palitin ang alerts */
+.alert-section {
+  margin-bottom: 0.6rem !important;
+}
+
+.alert-header {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+.alert-count {
+  padding: 1px 6px !important;
+  font-size: 0.6rem !important;
+}
+
+.no-alert {
+  padding: 0.3rem !important;
+  font-size: 0.7rem !important;
+}
+
+.alert-item {
+  padding: 0.25rem 0.4rem !important;
+  font-size: 0.7rem !important;
+}
+
+.stock-badge {
+  font-size: 0.6rem !important;
+}
+
+.more-items {
+  font-size: 0.6rem !important;
+}
+
+/* Palitin ang recent transactions */
+.recent-item {
+  padding: 0.25rem !important;
+  gap: 0.4rem !important;
+}
+
+.recent-date {
+  font-size: 0.55rem !important;
+  min-width: 70px !important;
+}
+
+.badge-in, .badge-out {
+  padding: 1px 6px !important;
+  font-size: 0.55rem !important;
+}
+
+.recent-name {
+  font-size: 0.7rem !important;
+}
+
+.recent-qty {
+  font-size: 0.6rem !important;
+}
+
+/* Palitin ang quick actions */
+.quick-actions {
+  gap: 0.5rem !important;
+}
+
+.quick-btn {
+  padding: 0.4rem !important;
+  font-size: 0.6rem !important;
+}
+
+.quick-btn i {
+  margin-right: 3px !important;
+}
+
+/* Palitin ang summary rows */
+.summary-row {
+  padding: 0.25rem 0 !important;
+  font-size: 0.7rem !important;
+}
+
+.summary-row span i {
+  margin-right: 4px !important;
+}
+
+.profit-row {
+  padding-top: 0.4rem !important;
+}
+
+/* Palitin ang category stats */
+.category-stats {
+  gap: 0.4rem !important;
+}
+
+.category-stat {
+  gap: 0.3rem !important;
+}
+
+.cat-name {
+  min-width: 65px !important;
+  font-size: 0.7rem !important;
+}
+
+.cat-bar-container {
+  height: 5px !important;
+}
+
+.cat-count {
+  min-width: 45px !important;
+  font-size: 0.6rem !important;
+}
+
+/* Palitin ang preview */
+.preview {
+  padding: 0.5rem !important;
+  margin-top: 0.5rem !important;
+}
+
+.preview p {
+  font-size: 0.7rem !important;
+}
+
+.preview-detail {
+  font-size: 0.6rem !important;
+}
+
+/* Palitin ang modal */
+.modal-content {
+  width: 400px !important;
+}
+
+.modal-header {
+  padding: 0.5rem 1rem !important;
+}
+
+.modal-header h3 {
+  font-size: 0.85rem !important;
+}
+
+.modal-body {
+  padding: 0.8rem !important;
+}
+
+.modal-footer {
+  padding: 0.6rem 0.8rem !important;
+}
+
+.form-group {
+  margin-bottom: 0.5rem !important;
+}
+
+.form-group label {
+  font-size: 0.7rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.form-group small {
+  font-size: 0.55rem !important;
+}
+
+.form-input {
+  padding: 5px 8px !important;
+  font-size: 0.7rem !important;
+}
+
+.btn-cancel, .btn-save {
+  padding: 5px 12px !important;
+  font-size: 0.65rem !important;
+}
+
+/* Palitin ang no data */
+.no-data {
+  padding: 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+/* Responsive - mas compact */
+@media (max-width: 900px) {
+  .stats-grid {
+    gap: 0.5rem !important;
+  }
+  
+  .two-columns {
+    gap: 0.6rem !important;
+  }
+  
+  .stat-card {
+    padding: 0.4rem 0.6rem !important;
+  }
+  
+  .stat-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .stat-info .value {
+    font-size: 0.75rem !important;
+  }
+}
 </style>

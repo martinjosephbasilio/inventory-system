@@ -1145,4 +1145,224 @@ onMounted(async () => {
     gap: 0.5rem;
   }
 }
+/* PAMPALIIT LANG NG PRODUCTS MASTER - IDAGDAG SA DULO */
+
+.card {
+  padding: 0.8rem !important;
+}
+
+.page-header {
+  margin-bottom: 0.8rem !important;
+  gap: 0.5rem !important;
+}
+
+.header-left h2 {
+  font-size: 1rem !important;
+  margin-bottom: 0.1rem !important;
+}
+
+.subtitle {
+  font-size: 0.65rem !important;
+}
+
+.btn-primary {
+  padding: 5px 12px !important;
+  font-size: 0.7rem !important;
+}
+
+.search-section {
+  margin-bottom: 0.8rem !important;
+}
+
+.search-input {
+  padding: 6px 35px 6px 38px !important;
+  font-size: 0.7rem !important;
+}
+
+.filter-badge {
+  font-size: 0.65rem !important;
+  margin-top: 4px !important;
+}
+
+.pro-table th {
+  padding: 0.4rem 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+.pro-table td {
+  padding: 0.35rem 0.4rem !important;
+  font-size: 0.7rem !important;
+}
+
+.item-code {
+  padding: 2px 6px !important;
+  font-size: 0.6rem !important;
+}
+
+.item-name {
+  font-size: 0.7rem !important;
+}
+
+.category-badge {
+  padding: 2px 8px !important;
+  font-size: 0.6rem !important;
+}
+
+.pack-size {
+  padding: 2px 6px !important;
+  font-size: 0.65rem !important;
+}
+
+.price-cell .price {
+  font-size: 0.7rem !important;
+}
+
+.price-cell .price-unit {
+  font-size: 0.55rem !important;
+}
+
+.stock-packs {
+  font-size: 0.7rem !important;
+}
+
+.stock-base {
+  font-size: 0.55rem !important;
+}
+
+.reorder-value {
+  padding: 2px 8px !important;
+  font-size: 0.6rem !important;
+}
+
+.reorder-base {
+  font-size: 0.5rem !important;
+}
+
+.status-badge {
+  padding: 2px 8px !important;
+  font-size: 0.6rem !important;
+}
+
+.action-btn {
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 0.7rem !important;
+}
+
+.table-footer {
+  margin-top: 0.6rem !important;
+  padding-top: 0.6rem !important;
+}
+
+.footer-info {
+  font-size: 0.65rem !important;
+  gap: 0.8rem !important;
+}
+
+/* Modal - mas maliit */
+.modal-container {
+  width: 550px !important;
+}
+
+.modal-header {
+  padding: 0.6rem 1rem !important;
+}
+
+.modal-header h3 {
+  font-size: 0.85rem !important;
+}
+
+.header-icon {
+  font-size: 1rem !important;
+}
+
+.modal-body {
+  padding: 0.8rem !important;
+}
+
+.form-tabs {
+  margin-bottom: 0.8rem !important;
+}
+
+.tab {
+  padding: 4px 12px !important;
+  font-size: 0.7rem !important;
+}
+
+.form-row {
+  gap: 0.6rem !important;
+  margin-bottom: 0.6rem !important;
+}
+
+.form-group label {
+  font-size: 0.65rem !important;
+}
+
+.form-control {
+  padding: 4px 8px !important;
+  font-size: 0.65rem !important;
+}
+
+.currency {
+  font-size: 0.65rem !important;
+}
+
+.price-section {
+  padding: 0.6rem !important;
+  margin: 0.6rem 0 !important;
+}
+
+.section-title {
+  font-size: 0.7rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.preview-card {
+  margin-top: 0.6rem !important;
+}
+
+.preview-header {
+  padding: 4px 10px !important;
+  font-size: 0.65rem !important;
+}
+
+.preview-content {
+  padding: 6px 10px !important;
+}
+
+.preview-row {
+  font-size: 0.65rem !important;
+  padding: 2px 0 !important;
+}
+
+.preview-code {
+  font-size: 0.6rem !important;
+}
+
+.profit-highlight {
+  font-size: 0.65rem !important;
+}
+
+.modal-footer {
+  padding: 0.6rem 1rem !important;
+  gap: 8px !important;
+}
+
+.btn-secondary, .btn-primary {
+  padding: 4px 12px !important;
+  font-size: 0.65rem !important;
+}
+
+.empty-icon {
+  font-size: 1.5rem !important;
+}
+
+.empty-state p {
+  font-size: 0.7rem !important;
+}
+
+.empty-state .btn-outline {
+  padding: 4px 12px !important;
+  font-size: 0.65rem !important;
+}
 </style>

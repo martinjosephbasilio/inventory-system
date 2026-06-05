@@ -1,35 +1,47 @@
 <template>
   <div class="login-container">
     <div class="login-card">
+      <!-- Enhanced header with icon animation -->
       <div class="login-header">
-        <i class="fas fa-box"></i>
+        <div class="icon-wrapper">
+          <i class="fas fa-boxes"></i>
+        </div>
         <h2>INR Packaging Corp</h2>
         <p>Inventory Management System</p>
       </div>
       
       <div class="login-form">
         <div class="form-group">
-          <label>Username</label>
+          <label><i class="fas fa-user"></i> Username</label>
           <input type="text" id="username" placeholder="Enter your username" />
         </div>
         
         <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="password" placeholder="Enter your password" />
+          <label><i class="fas fa-lock"></i> Password</label>
+          <div class="password-wrapper">
+            <input :type="passwordVisible ? 'text' : 'password'" id="password" placeholder="Enter your password" />
+            <button type="button" class="toggle-password" @click="togglePasswordVisibility">
+              <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
         </div>
         
-        <button id="loginBtn" class="login-btn">Login</button>
+        <button id="loginBtn" class="login-btn">
+          <span>Login</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
       </div>
       
       <div id="errorMessage" class="error-message" style="display: none;"></div>
       
-      <!-- Forgot Password Link - IDINAGDAG ITO -->
       <div class="forgot-password">
         <router-link to="/forgot-password">Forgot Password?</router-link>
       </div>
       
       <div class="login-footer">
-        <small>Default: admin / admin123</small>
+        <span class="demo-badge">
+          <i class="fas fa-info-circle"></i> Default: admin / admin123
+        </span>
       </div>
       
       <div class="register-link">
@@ -40,10 +52,16 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
+const passwordVisible = ref(false)
+
+const togglePasswordVisibility = () => {
+  passwordVisible.value = !passwordVisible.value
+}
 
 // Function to show error message (stays for 30 minutes = 1,800,000 milliseconds)
 let errorTimeout = null
@@ -60,11 +78,11 @@ const showError = (message) => {
   errorDiv.textContent = message
   errorDiv.style.display = 'block'
   
-  // Auto hide after 30 minutes (sobrang tagal, halos hindi na mawawala)
+  // Auto hide after 30 minutes
   errorTimeout = setTimeout(() => {
     errorDiv.style.display = 'none'
     errorTimeout = null
-  }, 1800000) // 30 minutes = 1,800,000 milliseconds
+  }, 1800000)
 }
 
 // Login function
@@ -85,7 +103,7 @@ const doLogin = async () => {
   }
   
   loginBtn.disabled = true
-  loginBtn.textContent = 'Logging in...'
+  loginBtn.innerHTML = '<span>Logging in...</span><i class="fas fa-spinner fa-spin"></i>'
   
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -103,12 +121,12 @@ const doLogin = async () => {
     } else {
       showError(`❌ ${data.error || 'Invalid username or password'}`)
       loginBtn.disabled = false
-      loginBtn.textContent = 'Login'
+      loginBtn.innerHTML = '<span>Login</span><i class="fas fa-arrow-right"></i>'
     }
   } catch (error) {
     showError('❌ Login failed. Please check your connection.')
     loginBtn.disabled = false
-    loginBtn.textContent = 'Login'
+    loginBtn.innerHTML = '<span>Login</span><i class="fas fa-arrow-right"></i>'
   }
 }
 
@@ -149,21 +167,61 @@ const goToRegister = () => {
 </script>
 
 <style scoped>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .login-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #1a2a3a 0%, #0d1b2a 100%);
+  background: linear-gradient(135deg, #3d0c0c 0%, #7a1f1f 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative background elements */
+.login-container::before {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  top: -150px;
+  right: -100px;
+}
+
+.login-container::after {
+  content: "";
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 50%;
+  bottom: -200px;
+  left: -150px;
 }
 
 .login-card {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  width: 400px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 32px;
+  padding: 2.5rem;
+  width: 440px;
   max-width: 90%;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 8px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(2px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.login-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.4);
 }
 
 .login-header {
@@ -171,20 +229,41 @@ const goToRegister = () => {
   margin-bottom: 2rem;
 }
 
-.login-header i {
-  font-size: 3rem;
-  color: #dc3545;
-  margin-bottom: 1rem;
+.icon-wrapper {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+  box-shadow: 0 10px 20px -5px rgba(220, 38, 38, 0.4);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.icon-wrapper i {
+  font-size: 2rem;
+  color: white;
 }
 
 .login-header h2 {
-  color: #1a2a3a;
+  color: #2d1a1a;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
   margin-bottom: 0.25rem;
 }
 
 .login-header p {
-  color: #666;
+  color: #7a5c5c;
   font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .login-form .form-group {
@@ -194,77 +273,131 @@ const goToRegister = () => {
 .login-form label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: #5c3a3a;
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+}
+
+.login-form label i {
+  margin-right: 8px;
+  font-size: 0.8rem;
+  color: #dc2626;
 }
 
 .login-form input {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: #ffffff;
 }
 
 .login-form input:focus {
   outline: none;
-  border-color: #dc3545;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  flex: 1;
+  padding-right: 45px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #bca0a0;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.toggle-password:hover {
+  color: #dc2626;
 }
 
 .login-btn {
   width: 100%;
-  padding: 12px;
-  background: #dc3545;
+  padding: 14px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 40px;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .login-btn:hover {
-  background: #bb2d3b;
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: scale(1.02);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
 }
 
 .login-btn:disabled {
-  background: #6c757d;
+  background: linear-gradient(135deg, #c17a7a, #a86b6b);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.login-btn i {
+  font-size: 0.9rem;
+  transition: transform 0.2s;
+}
+
+.login-btn:hover i {
+  transform: translateX(3px);
+}
+
+.fa-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error-message {
   margin-top: 1rem;
-  padding: 15px;
-  background: #f8d7da;
-  color: #dc3545;
-  border-radius: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fee2e2, #fff0f0);
+  color: #dc2626;
+  border-radius: 16px;
   text-align: center;
-  font-size: 0.9rem;
-  border-left: 4px solid #dc3545;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-left: 4px solid #dc2626;
   animation: fadeIn 0.3s ease;
-}
-
-/* Forgot Password - BAGONG STYLE */
-.forgot-password {
-  margin-top: 0.75rem;
-  text-align: right;
-}
-
-.forgot-password a {
-  color: #6c757d;
-  font-size: 0.75rem;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.forgot-password a:hover {
-  color: #dc3545;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
@@ -272,25 +405,89 @@ const goToRegister = () => {
   }
 }
 
-.login-footer {
+.forgot-password {
   margin-top: 1rem;
+  text-align: right;
+}
+
+.forgot-password a {
+  color: #b85c5c;
+  font-size: 0.8rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot-password a:hover {
+  color: #dc2626;
+  text-decoration: underline;
+}
+
+.login-footer {
+  margin-top: 1.25rem;
   text-align: center;
-  color: #999;
+}
+
+.demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff0f0;
+  padding: 6px 14px;
+  border-radius: 40px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #b91c1c;
+  letter-spacing: 0.3px;
+}
+
+.demo-badge i {
+  font-size: 0.7rem;
 }
 
 .register-link {
-  margin-top: 1rem;
+  margin-top: 1.25rem;
   text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #f0e2e2;
+}
+
+.register-link p {
+  color: #7a5c5c;
+  font-size: 0.85rem;
 }
 
 .register-link a {
-  color: #28a745;
+  color: #dc2626;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
+  transition: color 0.2s;
 }
 
 .register-link a:hover {
+  color: #991b1b;
   text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 1.75rem;
+    border-radius: 24px;
+  }
+  
+  .icon-wrapper {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .icon-wrapper i {
+    font-size: 1.5rem;
+  }
+  
+  .login-header h2 {
+    font-size: 1.4rem;
+  }
 }
 </style>

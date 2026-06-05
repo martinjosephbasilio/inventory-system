@@ -211,7 +211,7 @@ import axios from 'axios'
 const store = useInventoryStore()
 const showToast = inject('showToast')
 const showConfirm = inject('showConfirm')
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -783,5 +783,150 @@ onMounted(() => {
 
 .btn-save:hover {
   background: #1a252f;
+}
+/* PAMPALIIT LANG NG EXPENSES TRACKER - IDAGDAG SA DULO */
+
+.card {
+  padding: 0.8rem !important;
+}
+
+.header-actions {
+  margin-bottom: 0.8rem !important;
+  gap: 0.5rem !important;
+}
+
+.header-left h3 {
+  font-size: 0.95rem !important;
+  margin-bottom: 0.15rem !important;
+}
+
+.header-left p {
+  font-size: 0.65rem !important;
+}
+
+.btn-add {
+  padding: 5px 12px !important;
+  font-size: 0.7rem !important;
+}
+
+.filter-section {
+  padding: 0.6rem !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.filter-row {
+  gap: 0.5rem !important;
+}
+
+.filter-group label {
+  font-size: 0.6rem !important;
+}
+
+.filter-input {
+  padding: 4px 8px !important;
+  font-size: 0.65rem !important;
+  min-width: 120px !important;
+}
+
+.btn-clear {
+  padding: 4px 12px !important;
+  font-size: 0.65rem !important;
+}
+
+.total-card {
+  padding: 0.6rem 1rem !important;
+  margin-bottom: 0.8rem !important;
+  gap: 0.6rem !important;
+}
+
+.total-icon {
+  width: 40px !important;
+  height: 40px !important;
+  font-size: 1.2rem !important;
+}
+
+.total-info span {
+  font-size: 0.65rem !important;
+}
+
+.total-info strong {
+  font-size: 1.2rem !important;
+}
+
+.expenses-table th {
+  padding: 0.4rem 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+.expenses-table td {
+  padding: 0.35rem 0.4rem !important;
+  font-size: 0.7rem !important;
+}
+
+.category-badge {
+  padding: 2px 8px !important;
+  font-size: 0.6rem !important;
+}
+
+.amount-cell {
+  font-size: 0.7rem !important;
+}
+
+.note-text {
+  font-size: 0.65rem !important;
+}
+
+.btn-edit, .btn-delete {
+  padding: 3px 8px !important;
+  font-size: 0.6rem !important;
+}
+
+.empty-row {
+  padding: 1rem !important;
+  font-size: 0.7rem !important;
+}
+
+.empty-row i {
+  font-size: 1.2rem !important;
+}
+
+/* Modal - mas maliit */
+.modal-content {
+  width: 400px !important;
+}
+
+.modal-header {
+  padding: 0.5rem 1rem !important;
+}
+
+.modal-header h3 {
+  font-size: 0.85rem !important;
+}
+
+.modal-body {
+  padding: 0.8rem !important;
+}
+
+.modal-footer {
+  padding: 0.6rem 0.8rem !important;
+}
+
+.form-group {
+  margin-bottom: 0.5rem !important;
+}
+
+.form-group label {
+  font-size: 0.65rem !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.form-input {
+  padding: 4px 8px !important;
+  font-size: 0.65rem !important;
+}
+
+.btn-cancel, .btn-save {
+  padding: 4px 12px !important;
+  font-size: 0.65rem !important;
 }
 </style>

@@ -44,7 +44,7 @@ const loading = ref(false)
 const message = ref('')
 const error = ref('')
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 
 const requestReset = async () => {
   if (!email.value) {

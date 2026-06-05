@@ -667,4 +667,213 @@ const saveMovement = async () => {
 .btn-save:hover {
   background: #008a91;
 }
+/* ===== COMPACT STOCK INVENTORY - PAMPALIIT LANG ===== */
+
+/* Palitin ang main container */
+.container, .card, .inventory-container {
+  padding: 0.8rem !important;
+}
+
+/* Palitin ang header */
+.page-header, .header-actions {
+  margin-bottom: 0.8rem !important;
+}
+
+.page-header h3, .header-actions h3 {
+  font-size: 1rem !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.page-header p, .header-actions p {
+  font-size: 0.7rem !important;
+}
+
+/* Palitin ang table */
+.table, .inventory-table {
+  font-size: 0.7rem !important;
+}
+
+/* Palitin ang table header */
+.table thead th, .inventory-table thead th {
+  padding: 0.4rem 0.3rem !important;
+  font-size: 0.65rem !important;
+  white-space: nowrap !important;
+}
+
+/* Palitin ang table cells */
+.table tbody td, .inventory-table tbody td {
+  padding: 0.4rem 0.3rem !important;
+  vertical-align: middle !important;
+}
+
+/* Palitin ang item name at ID */
+.item-name {
+  font-size: 0.75rem !important;
+  font-weight: bold !important;
+}
+
+.item-id {
+  font-size: 0.6rem !important;
+  color: #6c757d !important;
+}
+
+/* Palitin ang badges at tags */
+.badge, .type-badge, .category-tag {
+  padding: 2px 6px !important;
+  font-size: 0.6rem !important;
+}
+
+/* Palitin ang price displays */
+.price-pack, .price-base {
+  font-size: 0.7rem !important;
+}
+
+.price-pack small, .price-base small {
+  font-size: 0.55rem !important;
+}
+
+/* Palitin ang stock display */
+.stock-display {
+  font-size: 0.75rem !important;
+  font-weight: bold !important;
+}
+
+.stock-base {
+  font-size: 0.6rem !important;
+  color: #6c757d !important;
+}
+
+/* Palitin ang action buttons */
+.action-buttons {
+  display: flex !important;
+  gap: 0.25rem !important;
+}
+
+.action-btn, .btn-sm {
+  padding: 0.2rem 0.4rem !important;
+  font-size: 0.6rem !important;
+  width: auto !important;
+  min-width: 35px !important;
+}
+
+.action-btn i, .btn-sm i {
+  font-size: 0.55rem !important;
+  margin-right: 2px !important;
+}
+
+/* Palitin ang IN/OUT buttons sa loob ng table */
+.in-btn, .out-btn {
+  padding: 0.2rem 0.4rem !important;
+  font-size: 0.55rem !important;
+}
+
+/* Palitin ang stats cards sa taas kung meron */
+.stats-grid {
+  gap: 0.6rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.stat-card {
+  padding: 0.5rem 0.7rem !important;
+  gap: 0.5rem !important;
+}
+
+.stat-icon {
+  width: 35px !important;
+  height: 35px !important;
+  font-size: 1rem !important;
+}
+
+.stat-info h4 {
+  font-size: 0.6rem !important;
+}
+
+.stat-info .value {
+  font-size: 0.85rem !important;
+}
+
+/* Palitin ang search/filter bar */
+.search-bar, .filter-bar {
+  margin-bottom: 0.8rem !important;
+}
+
+.search-bar input, .filter-bar select {
+  padding: 0.3rem 0.6rem !important;
+  font-size: 0.7rem !important;
+}
+
+/* Palitin ang pagination */
+.pagination {
+  margin-top: 0.8rem !important;
+}
+
+.pagination .page-link {
+  padding: 0.2rem 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+/* Palitin ang modal kung meron */
+.modal-content {
+  width: 380px !important;
+}
+
+.modal-header {
+  padding: 0.5rem 1rem !important;
+}
+
+.modal-header h3 {
+  font-size: 0.85rem !important;
+}
+
+.modal-body {
+  padding: 0.8rem !important;
+}
+
+.modal-footer {
+  padding: 0.6rem 0.8rem !important;
+}
+
+.form-group {
+  margin-bottom: 0.5rem !important;
+}
+
+.form-group label {
+  font-size: 0.7rem !important;
+}
+
+.form-input {
+  padding: 5px 8px !important;
+  font-size: 0.7rem !important;
+}
+
+/* Responsive - para sa mobile */
+@media (max-width: 768px) {
+  .table thead th {
+    font-size: 0.55rem !important;
+    padding: 0.3rem 0.2rem !important;
+  }
+  
+  .table tbody td {
+    padding: 0.3rem 0.2rem !important;
+  }
+  
+  .item-name {
+    font-size: 0.7rem !important;
+  }
+  
+  .action-btn, .btn-sm {
+    padding: 0.15rem 0.3rem !important;
+    font-size: 0.5rem !important;
+    min-width: 30px !important;
+  }
+  
+  .stock-display {
+    font-size: 0.65rem !important;
+  }
+}
+
+/* Optional: Para sa horizontal scroll kung sobrang daming columns */
+.inventory-table-container {
+  overflow-x: auto !important;
+}
 </style>

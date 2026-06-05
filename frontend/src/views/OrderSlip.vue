@@ -5,7 +5,22 @@
         <h3><i class="fas fa-file-invoice"></i> Order Slip / Delivery Receipt</h3>
         <p><i class="fas fa-box-open"></i> Generate order slip for packaging materials</p>
       </div>
-      
+      <!-- Auto-refresh indicator -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 6px 12px; background: #f0f4f8; border-radius: 8px;">
+  <div style="display: flex; align-items: center; gap: 15px;">
+    <span style="font-size: 12px; color: #2c3e50;">
+      <i class="fas fa-sync-alt" :class="{ 'fa-spin': false }"></i>
+      Last refresh: {{ lastRefresh.toLocaleTimeString() }}
+    </span>
+    <label style="font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+      <input type="checkbox" v-model="isAutoRefreshEnabled" style="margin: 0;">
+      Auto-refresh (10 sec)
+    </label>
+  </div>
+  <button @click="loadOrdersForDate" style="background: #2c3e50; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+    <i class="fas fa-refresh"></i> Refresh Now
+  </button>
+</div>
       <!-- Order Form -->
       <div class="order-form">
         <div class="form-row">
@@ -329,7 +344,7 @@ import autoTable from 'jspdf-autotable'
 import axios from 'axios'
 
 const store = useInventoryStore()
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 const showToast = inject('showToast')
 const showConfirm = inject('showConfirm')
 
@@ -353,6 +368,11 @@ const editOrderData = ref(null)
 const orderItems = ref([])
 const selectedOrderKeys = ref([])
 const selectAllFlag = ref(false)
+
+// Auto-refresh
+const lastRefresh = ref(new Date())
+let refreshInterval = null
+const isAutoRefreshEnabled = ref(true) // pwedeng i-off ng user
 
 // Existing orders tracking
 const hasExistingOrders = ref(false)
@@ -827,7 +847,26 @@ const downloadPDF = () => {
 onMounted(async () => {
   await store.fetchStock()
   await loadOrdersForDate()
+  // Start auto-refresh every 10 seconds
+  if (refreshInterval) clearInterval(refreshInterval)
+  refreshInterval = setInterval(() => {
+    if (isAutoRefreshEnabled.value) {
+      loadOrdersForDate()
+      lastRefresh.value = new Date()
+      console.log('Auto-refreshed orders at:', lastRefresh.value.toLocaleTimeString())
+    }
+  }, 10000) // 10 seconds
 })
+
+// Clean up pag umalis sa page
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+})
+
 </script>
 
 <style scoped>
@@ -1296,5 +1335,165 @@ onMounted(async () => {
   .action-buttons { width: 100%; }
   .action-buttons button { flex: 1; }
   .action-cell { flex-direction: column; align-items: center; }
+}
+/* PAMPALIIT LANG NG ORDER SLIP TABLE - IDAGDAG SA DULO */
+
+.items-table th {
+  padding: 0.4rem 0.3rem !important;
+  font-size: 0.65rem !important;
+}
+
+.items-table td {
+  padding: 0.35rem 0.25rem !important;
+  font-size: 0.7rem !important;
+}
+
+.qty-input {
+  width: 55px !important;
+  padding: 3px !important;
+  font-size: 0.65rem !important;
+}
+
+.unit-select {
+  width: 85px !important;
+  padding: 3px !important;
+  font-size: 0.65rem !important;
+}
+
+.price-input {
+  width: 75px !important;
+  padding: 3px !important;
+  font-size: 0.65rem !important;
+}
+
+.remark-input {
+  width: 90px !important;
+  padding: 3px !important;
+  font-size: 0.65rem !important;
+}
+
+.cat-badge {
+  padding: 2px 6px !important;
+  font-size: 0.6rem !important;
+}
+
+.stock-badge {
+  padding: 2px 6px !important;
+  font-size: 0.6rem !important;
+  gap: 2px !important;
+}
+
+.btn-edit, .btn-delete-row {
+  padding: 3px 6px !important;
+  font-size: 0.55rem !important;
+}
+
+.amount-cell {
+  font-size: 0.7rem !important;
+}
+
+.card {
+  padding: 0.8rem !important;
+}
+
+.header-actions h3 {
+  font-size: 0.95rem !important;
+}
+
+.header-actions p {
+  font-size: 0.65rem !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.order-form {
+  padding: 0.6rem !important;
+  margin-bottom: 0.6rem !important;
+}
+
+.form-row {
+  gap: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.form-group label {
+  font-size: 0.65rem !important;
+}
+
+.form-input {
+  padding: 4px 8px !important;
+  font-size: 0.65rem !important;
+}
+
+.btn-secondary, .btn-delete-selected {
+  padding: 4px 10px !important;
+  font-size: 0.6rem !important;
+}
+
+.info-badge {
+  padding: 4px 8px !important;
+  font-size: 0.7rem !important;
+}
+
+.btn-delete-all {
+  padding: 2px 8px !important;
+  font-size: 0.6rem !important;
+}
+
+.summary-info span, .selection-info span {
+  font-size: 0.65rem !important;
+}
+
+.btn-preview, .btn-pdf {
+  padding: 4px 10px !important;
+  font-size: 0.65rem !important;
+}
+
+.total-amount {
+  font-size: 0.9rem !important;
+}
+
+.modal-content {
+  width: 450px !important;
+}
+
+.modal-header {
+  padding: 0.5rem 1rem !important;
+}
+
+.modal-header h3 {
+  font-size: 0.85rem !important;
+}
+
+.modal-body {
+  padding: 0.8rem !important;
+}
+
+.modal-footer {
+  padding: 0.6rem 0.8rem !important;
+}
+
+.selected-item-info {
+  padding: 6px 8px !important;
+  margin-bottom: 0.8rem !important;
+  font-size: 0.7rem !important;
+}
+
+.preview {
+  padding: 0.5rem !important;
+  margin-top: 0.5rem !important;
+}
+
+.preview p {
+  font-size: 0.7rem !important;
+}
+
+.footer-info {
+  font-size: 0.6rem !important;
+  gap: 10px !important;
+}
+
+.empty-row {
+  padding: 0.8rem !important;
+  font-size: 0.7rem !important;
 }
 </style>
