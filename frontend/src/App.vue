@@ -43,9 +43,9 @@
           <span>Setup</span>
         </router-link>
         <router-link to="/users" class="nav-item" v-if="user?.role === 'admin'">
-  <span class="nav-icon"><i class="fas fa-users"></i></span>
-  <span>User Management</span>
-</router-link>
+          <span class="nav-icon"><i class="fas fa-users"></i></span>
+          <span>User Management</span>
+        </router-link>
       </nav>
       
       <!-- SPACER - pushes user dropdown to bottom -->
@@ -75,34 +75,33 @@
 
     <!-- MAIN CONTENT - only show when logged in -->
     <main class="main-content" v-if="isLoggedIn">
+      <!-- Global Auto-Refresh Indicator - NASA LOOB NG MAIN CONTENT -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-bottom: 15px; padding: 8px 12px; background: #e9ecef; border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-sync-alt" style="color: #2c3e50;"></i>
+          <span style="font-size: 12px; color: #2c3e50;">
+            Last refresh: {{ lastGlobalRefresh.toLocaleTimeString() }}
+          </span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer;">
+          <input type="checkbox" v-model="isAutoRefreshEnabled" style="margin: 0;">
+          Auto-refresh (10 sec)
+        </label>
+        <button @click="refreshAllData" style="background: #2c3e50; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+          <i class="fas fa-refresh"></i> Refresh Now
+        </button>
+      </div>
+      
       <div class="content-header">
         <h1><i class="fas fa-chart-pie"></i> {{ currentPageTitle }}</h1>
       </div>
-      <router-view />
+      <router-view />  <!-- ✅ ITO LANG ANG ISANG router-view -->
     </main>
     
     <!-- Show only login page when not logged in -->
     <div v-if="!isLoggedIn" class="login-wrapper">
-      <router-view />
+      <router-view />  <!-- ✅ ITO PARA SA LOGIN PAGE LANG -->
     </div>
-    <!-- Global Auto-Refresh Indicator -->
-<div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-bottom: 15px; padding: 8px 12px; background: #e9ecef; border-radius: 8px;">
-  <div style="display: flex; align-items: center; gap: 8px;">
-    <i class="fas fa-sync-alt" style="color: #2c3e50;"></i>
-    <span style="font-size: 12px; color: #2c3e50;">
-      Last refresh: {{ lastGlobalRefresh.toLocaleTimeString() }}
-    </span>
-  </div>
-  <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer;">
-    <input type="checkbox" v-model="isAutoRefreshEnabled" style="margin: 0;">
-    Auto-refresh (10 sec)
-  </label>
-  <button @click="refreshAllData" style="background: #2c3e50; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-    <i class="fas fa-refresh"></i> Refresh Now
-  </button>
-</div>
-
-<router-view />
 
     <!-- GLOBAL MODALS -->
     <ProfessionalModal ref="professionalModal" />
@@ -111,7 +110,7 @@
 </template>
 
 <script setup>
-import { computed, ref, provide, onMounted, watch } from 'vue'
+import { computed, ref, provide, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useInventoryStore } from './stores/inventory'
 import ProfessionalModal from './components/ProfessionalModal.vue'
@@ -128,14 +127,10 @@ const refreshAllData = async () => {
   if (!isLoggedIn.value) return
   
   try {
-    // Refresh inventory stock
     await store.fetchStock()
     await store.fetchItems()
-    
-    // Refresh dashboard data
     await store.fetchDashboard()
     
-    // 🔴 IMPORTANT: Refresh current user data (para mag-update ang sidebar name)
     const token = localStorage.getItem('token')
     if (token) {
       try {
@@ -143,11 +138,8 @@ const refreshAllData = async () => {
           headers: { Authorization: `Bearer ${token}` }
         })
         if (response.data) {
-          // Update user object
           user.value = response.data
-          // Update localStorage
           localStorage.setItem('user', JSON.stringify(response.data))
-          console.log('User data refreshed:', response.data.full_name)
         }
       } catch (err) {
         console.log('User refresh error:', err.message)
@@ -155,7 +147,6 @@ const refreshAllData = async () => {
     }
     
     lastGlobalRefresh.value = new Date()
-    console.log('Auto-refresh at:', lastGlobalRefresh.value.toLocaleTimeString())
   } catch (error) {
     console.error('Auto-refresh error:', error)
   }
@@ -168,12 +159,10 @@ const store = useInventoryStore()
 const professionalModal = ref(null)
 const toast = ref(null)
 
-// User and login state
 const user = ref(null)
 const isLoggedIn = ref(false)
 const userDropdownOpen = ref(false)
 
-// Check login status function
 const checkLoginStatus = () => {
   const token = localStorage.getItem('token')
   const userData = localStorage.getItem('user')
@@ -195,7 +184,6 @@ const closeUserDropdown = () => {
   userDropdownOpen.value = false
 }
 
-// Close dropdown when clicking outside
 const closeDropdownOnClickOutside = (event) => {
   const dropdown = document.querySelector('.user-dropdown')
   if (dropdown && !dropdown.contains(event.target)) {
@@ -228,7 +216,6 @@ const currentPageTitle = computed(() => {
   return titles[route.path] || 'Inventory System'
 })
 
-// Global showConfirm function - Professional Modal
 const showConfirm = (options) => {
   if (professionalModal.value) {
     return professionalModal.value.show(options)
@@ -236,7 +223,6 @@ const showConfirm = (options) => {
   return Promise.resolve(confirm(options.message))
 }
 
-// Global showToast function
 const showToast = (message, type = 'success') => {
   if (toast.value) {
     toast.value.show(message, type)
@@ -253,7 +239,6 @@ const showAlert = (message, type = 'info') => {
   }
 }
 
-// Logout function
 const logout = async () => {
   const confirmed = await showConfirm({
     type: 'warning',
@@ -274,13 +259,11 @@ const logout = async () => {
   }
 }
 
-// Provide to all child components
 provide('showConfirm', showConfirm)
 provide('showToast', showToast)
 provide('showAlert', showAlert)
 provide('axios', axios)
 
-// Watch for route changes
 watch(() => route.path, () => {
   checkLoginStatus()
   closeUserDropdown()
@@ -295,17 +278,14 @@ onMounted(() => {
     store.fetchDashboard()
   }
   
-  // Start global auto-refresh every 5 seconds
   if (globalRefreshInterval) clearInterval(globalRefreshInterval)
   globalRefreshInterval = setInterval(() => {
     if (isAutoRefreshEnabled.value && isLoggedIn.value) {
       refreshAllData()
     }
-  }, 10000) // 5 seconds
+  }, 10000)
 })
 
-// Clean up auto-refresh when app unmounts
-import { onUnmounted } from 'vue'
 onUnmounted(() => {
   if (globalRefreshInterval) {
     clearInterval(globalRefreshInterval)
@@ -315,6 +295,7 @@ onUnmounted(() => {
 </script>
 
 <style>
+/* [LAHAT NG STYLE MO DITO - WALANG BINAGO] */
 * {
   margin: 0;
   padding: 0;
@@ -331,7 +312,6 @@ body {
   min-height: 100vh;
 }
 
-/* Login wrapper - full screen */
 .login-wrapper {
   flex: 1;
   width: 100%;
@@ -342,7 +322,6 @@ body {
   background: linear-gradient(135deg, #1a2a3a 0%, #0d1b2a 100%);
 }
 
-/* ========== SIDEBAR STYLES ========== */
 .sidebar {
   width: 280px;
   background: linear-gradient(180deg, #1a2a3a 0%, #0d1b2a 100%);
@@ -380,7 +359,6 @@ body {
   margin-right: 4px;
 }
 
-/* Navigation */
 .nav-menu {
   display: flex;
   flex-direction: column;
@@ -416,12 +394,10 @@ body {
   text-align: center;
 }
 
-/* Spacer to push dropdown to bottom */
 .nav-spacer {
   flex: 1;
 }
 
-/* User Dropdown at bottom */
 .user-dropdown {
   position: relative;
   margin: 1rem;
@@ -511,7 +487,6 @@ body {
   margin: 4px 0;
 }
 
-/* ========== MAIN CONTENT STYLES ========== */
 .main-content {
   flex: 1;
   margin-left: 280px;
@@ -534,7 +509,6 @@ body {
   margin-right: 10px;
 }
 
-/* ========== BUTTON STYLES ========== */
 button {
   background: #dc3545;
   color: white;
@@ -590,7 +564,6 @@ button.success:hover {
   background: #dc3545;
 }
 
-/* ========== TABLE STYLES ========== */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -611,7 +584,6 @@ th {
   color: white;
 }
 
-/* ========== CARD STYLES ========== */
 .card {
   background: white;
   border-radius: 8px;
@@ -625,7 +597,6 @@ th {
   color: #1a2a3a;
 }
 
-/* ========== STATS GRID ========== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -653,7 +624,6 @@ th {
   color: #1a2a3a;
 }
 
-/* ========== ALERT STYLES ========== */
 .alert {
   background: #fff3cd;
   border-left: 4px solid #ffc107;
@@ -667,7 +637,6 @@ th {
   border-left-color: #dc3545;
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .sidebar {
     width: 70px;
