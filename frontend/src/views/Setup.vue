@@ -182,7 +182,7 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label><i class="fas fa-cubes"></i> Pack Size (per pack)</label>
+                <label><i class="fas fa-cubes"></i> Pack Size </label>
                 <input type="number" v-model.number="form.pack_size" min="1" class="form-control" />
                 <small>How many pieces per pack?</small>
               </div>
@@ -299,7 +299,7 @@ const form = ref({
   name: '',
   category: 'Boxes',
   unit: 'pcs',
-  pack_size: 100,
+  pack_size: 1,
   type: 'Both',
   cost_pack: 0,
   cost_base: 0,
