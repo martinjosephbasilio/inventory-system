@@ -35,6 +35,7 @@
               <th><i class="fas fa-barcode"></i> Item Code</th>
               <th><i class="fas fa-box"></i> Item Name</th>
               <th><i class="fas fa-tags"></i> Category</th>
+              <th><i class="fas fa-cubes"></i> Pack Size</th>
               <th><i class="fas fa-dollar-sign"></i> Cost Price</th>
               <th><i class="fas fa-chart-line"></i> Selling Price</th>
               <th><i class="fas fa-warehouse"></i> Stock</th>
@@ -47,30 +48,36 @@
             <tr v-for="item in filteredItems" :key="item.id" class="item-row">
               <td class="code-cell">
                 <code class="item-code">{{ item.id }}</code>
-              </td>
+               </td>
               <td class="name-cell">
                 <div class="item-name">{{ item.name }}</div>
-              </td>
+               </td>
               <td>
                 <span :class="['category-badge', getCategoryClass(item.category)]">
                   <i :class="getCategoryIcon(item.category)"></i> {{ item.category || 'Packaging' }}
                 </span>
                </td>
+              <td class="center">
+                <span class="pack-size">{{ item.pack_size }} <i class="fas fa-cube"></i> pcs/pack</span>
+               </td>
               <td class="price-cell">
                 <div class="price"><i class="fas fa-peso-sign"></i> {{ formatNumber(item.cost_pack) }}</div>
-                <div class="price-unit">(per pack)</div>
+                <div class="price-unit">(<i class="fas fa-peso-sign"></i> {{ formatNumber(item.cost_base) }}/pc)</div>
                </td>
               <td class="price-cell">
                 <div class="price"><i class="fas fa-peso-sign"></i> {{ formatNumber(item.sell_pack) }}</div>
-                <div class="price-unit">(per pack)</div>
+                <div class="price-unit">(<i class="fas fa-peso-sign"></i> {{ formatNumber(item.sell_base) }}/pc)</div>
                </td>
+              <!-- FIXED: Stock column - no pcs -->
               <td class="stock-cell">
                 <div class="stock-info">
                   <span class="stock-packs"><i class="fas fa-cubes"></i> {{ item.boxes || 0 }} packs</span>
+                  <span class="stock-base"><i class="fas fa-database"></i> Base: {{ item.current_stock_base || 0 }} pcs</span>
                 </div>
                </td>
               <td class="center">
-                <span class="reorder-value">{{ item.reorder_packs || 20 }} packs</span>
+                <span class="reorder-value">{{ item.reorder_in_packs }} packs</span>
+                <small class="reorder-base">({{ item.reorder_level }} pcs)</small>
                </td>
               <td>
                 <span :class="getStockStatusClass(item)">
@@ -88,7 +95,7 @@
                </td>
             </tr>
             <tr v-if="filteredItems.length === 0">
-              <td colspan="9" class="empty-row">
+              <td colspan="10" class="empty-row">
                 <div class="empty-state">
                   <i class="fas fa-box-open empty-icon"></i>
                   <p>No items found</p>
@@ -126,6 +133,12 @@
         </div>
 
         <div class="modal-body">
+          <div class="form-tabs">
+            <div class="tab active"><i class="fas fa-info-circle"></i> Basic Info</div>
+            <div class="tab"><i class="fas fa-dollar-sign"></i> Pricing</div>
+            <div class="tab"><i class="fas fa-chart-line"></i> Inventory</div>
+          </div>
+
           <div class="form-section">
             <div class="form-row">
               <div class="form-group">
@@ -157,14 +170,22 @@
               </div>
               <div class="form-group">
                 <label><i class="fas fa-ruler-combined"></i> Unit of Measure:</label>
-                <select v-model="form.unit" class="form-control" disabled>
-                  <option value="Pack">Pack</option>
+                <select v-model="form.unit" class="form-control">
+                  <option value="pcs">Pieces (pcs)</option>
+                  <option value="rolls">Rolls</option>
+                  <option value="meters">Meters (m)</option>
+                  <option value="kg">Kilograms (kg)</option>
+                  <option value="liters">Liters (L)</option>
                 </select>
-                <small>1 Pack = 1 piece (no conversion)</small>
               </div>
             </div>
 
             <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-cubes"></i> Pack Size (per pack)</label>
+                <input type="number" v-model.number="form.pack_size" min="1" class="form-control" />
+                <small>How many pieces per pack?</small>
+              </div>
               <div class="form-group">
                 <label><i class="fas fa-chart-line"></i> Sales Type</label>
                 <select v-model="form.type" class="form-control">
@@ -172,11 +193,6 @@
                   <option value="Retail">Retail Only</option>
                   <option value="Wholesale">Wholesale Only</option>
                 </select>
-              </div>
-              <div class="form-group">
-                <label><i class="fas fa-flag-checkered"></i> Reorder Level (in packs)</label>
-                <input type="number" v-model.number="form.reorder_packs" min="0" class="form-control" />
-                <small>Alert when stock falls below this level (in packs)</small>
               </div>
             </div>
 
@@ -191,19 +207,42 @@
                   </div>
                 </div>
                 <div class="form-group">
+                  <label>Cost Price (per Piece)</label>
+                  <div class="currency-input">
+                    <span class="currency"><i class="fas fa-peso-sign"></i></span>
+                    <input type="number" step="0.01" v-model.number="form.cost_base" class="form-control" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
                   <label>Selling Price (per Pack)</label>
                   <div class="currency-input">
                     <span class="currency"><i class="fas fa-peso-sign"></i></span>
                     <input type="number" step="0.01" v-model.number="form.sell_pack" class="form-control" />
                   </div>
                 </div>
+                <div class="form-group">
+                  <label>Selling Price (per Piece)</label>
+                  <div class="currency-input">
+                    <span class="currency"><i class="fas fa-peso-sign"></i></span>
+                    <input type="number" step="0.01" v-model.number="form.sell_base" class="form-control" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="form-group" v-if="!isEditing">
-              <label><i class="fas fa-database"></i> Initial Stock (in packs)</label>
-              <input type="number" v-model.number="form.initial_stock_packs" min="0" class="form-control" />
-              <small>Starting inventory in packs</small>
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-flag-checkered"></i> Reorder Level (in packs)</label>
+                <input type="number" v-model.number="form.reorder_packs" min="0" class="form-control" />
+                <small>Alert when stock falls below this level (in packs)</small>
+              </div>
+              <div class="form-group" v-if="!isEditing">
+                <label><i class="fas fa-database"></i> Initial Stock (in packs)</label>
+                <input type="number" v-model.number="form.initial_stock_packs" min="0" class="form-control" />
+                <small>Starting inventory in packs</small>
+              </div>
             </div>
           </div>
 
@@ -215,11 +254,12 @@
                 <code class="preview-code">{{ form.id || 'ITEM-CODE' }}</code>
               </div>
               <div class="preview-row">
-                <span><i class="fas fa-cubes"></i> Unit: Pack (1 pc/pack)</span>
-                <span><i class="fas fa-coins"></i> Cost: ₱{{ formatNumber(form.cost_pack) }} | Sell: ₱{{ formatNumber(form.sell_pack) }}</span>
+                <span><i class="fas fa-cubes"></i> Pack: {{ form.pack_size }} pcs/pack</span>
+                <span><i class="fas fa-coins"></i> Cost: ₱{{ formatNumber(form.cost_pack) }} | Sell: ₱{{
+                  formatNumber(form.sell_pack) }}</span>
               </div>
               <div class="preview-row">
-                <span><i class="fas fa-flag"></i> Reorder at: {{ form.reorder_packs || 20 }} packs</span>
+                <span><i class="fas fa-flag"></i> Reorder at: {{ form.reorder_packs || 20 }} packs ({{ (form.reorder_packs || 20) * form.pack_size }} pcs)</span>
               </div>
               <div class="preview-row profit-highlight" v-if="form.sell_pack > form.cost_pack">
                 <i class="fas fa-chart-line"></i> Profit per pack: ₱{{ formatNumber(form.sell_pack - form.cost_pack) }}
@@ -258,11 +298,13 @@ const form = ref({
   id: '',
   name: '',
   category: 'Boxes',
-  unit: 'Pack',
-  pack_size: 1,  // FIXED: 1 pack = 1 piece
+  unit: 'pcs',
+  pack_size: 100,
   type: 'Both',
   cost_pack: 0,
+  cost_base: 0,
   sell_pack: 0,
+  sell_base: 0,
   reorder_packs: 20,
   initial_stock_packs: 0
 })
@@ -273,17 +315,21 @@ const LOW_STOCK_THRESHOLD = 20
 // Get stock data from store.stock
 const getItemStock = (itemId) => {
   const stockItem = store.stock.find(s => s.id === itemId)
-  return stockItem || { current_stock_base: 0, boxes: 0 }
+  return stockItem || { current_stock_base: 0, boxes: 0, pcs: 0 }
 }
 
 const filteredItems = computed(() => {
   let items = store.items.map(item => {
     const stock = getItemStock(item.id)
+    // Reorder in packs is always 20 (or from item.reorder_packs if exists)
+    const reorderInPacks = item.reorder_packs || 20
     return {
       ...item,
       current_stock_base: stock.current_stock_base,
       boxes: stock.boxes || 0,
-      reorder_packs: item.reorder_packs || 20
+      pcs: stock.pcs || 0,
+      reorder_in_packs: reorderInPacks,
+      reorder_level: reorderInPacks * (item.pack_size || 1)
     }
   })
   
@@ -298,7 +344,7 @@ const filteredItems = computed(() => {
   return items
 })
 
-// Stock status based on packs
+// Stock status based on packs (Low Stock when 20 packs or below)
 const getStockStatusClass = (item) => {
   const stockInPacks = item.boxes || 0
   
@@ -410,11 +456,13 @@ const openAddModal = () => {
     id: generateNextId(),
     name: '',
     category: 'Boxes',
-    unit: 'Pack',
-    pack_size: 1,
+    unit: 'pcs',
+    pack_size: 100,
     type: 'Both',
     cost_pack: 0,
+    cost_base: 0,
     sell_pack: 0,
+    sell_base: 0,
     reorder_packs: 20,
     initial_stock_packs: 0
   }
@@ -427,11 +475,13 @@ const openEditModal = (item) => {
     id: item.id,
     name: item.name,
     category: item.category || 'Boxes',
-    unit: 'Pack',
-    pack_size: 1,
+    unit: item.unit || 'pcs',
+    pack_size: item.pack_size,
     type: item.type,
     cost_pack: item.cost_pack,
+    cost_base: item.cost_base,
     sell_pack: item.sell_pack,
+    sell_base: item.sell_base,
     reorder_packs: item.reorder_packs || 20,
     initial_stock_packs: 0
   }
@@ -444,16 +494,24 @@ const saveItem = async () => {
     return
   }
   
+  if (form.value.pack_size <= 0) {
+    showToast('Pack size must be greater than 0', 'warning')
+    return
+  }
+  
+  // Convert packs to pieces
+  const reorder_level = (form.value.reorder_packs || 20) * form.value.pack_size
+  
   const itemData = {
     id: form.value.id,
     name: form.value.name,
-    pack_size: 1,  // Fixed to 1
+    pack_size: form.value.pack_size,
     type: form.value.type,
     cost_pack: form.value.cost_pack,
-    cost_base: form.value.cost_pack,  // Same as pack price since 1 pack = 1 piece
+    cost_base: form.value.cost_base,
     sell_pack: form.value.sell_pack,
-    sell_base: form.value.sell_pack,  // Same as pack price
-    reorder_level: form.value.reorder_packs || 20,  // Reorder in packs
+    sell_base: form.value.sell_base,
+    reorder_level: reorder_level,
     reorder_packs: form.value.reorder_packs || 20
   }
   
@@ -469,6 +527,7 @@ const saveItem = async () => {
     await store.addItem(itemData)
     
     if (form.value.initial_stock_packs > 0) {
+      const initialStockPcs = form.value.initial_stock_packs * form.value.pack_size
       const now = new Date()
       const datetime = now.toISOString().slice(0, 19).replace('T', ' ')
       const movement = {
@@ -478,7 +537,7 @@ const saveItem = async () => {
         item_name: form.value.name,
         quantity: form.value.initial_stock_packs,
         unit: 'PACK',
-        base_delta: form.value.initial_stock_packs,  // No conversion - 1 pack = 1 base unit
+        base_delta: initialStockPcs,
         note: 'Initial stock on item creation',
         sell_price: null,
         total_sales: null
@@ -697,6 +756,13 @@ onMounted(async () => {
   text-align: center;
 }
 
+.pack-size {
+  background: #f0f2f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
 .price-cell .price {
   font-weight: 600;
   color: #1a2a3a;
@@ -718,6 +784,12 @@ onMounted(async () => {
   font-size: 0.85rem;
 }
 
+.stock-base {
+  font-size: 0.7rem;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
 .reorder-value {
   font-weight: 600;
   color: #ffc107;
@@ -726,6 +798,12 @@ onMounted(async () => {
   border-radius: 20px;
   font-size: 0.75rem;
   display: inline-block;
+}
+
+.reorder-base {
+  font-size: 0.6rem;
+  color: #6c757d;
+  display: block;
 }
 
 .status-badge {
@@ -875,6 +953,30 @@ onMounted(async () => {
 
 .modal-body {
   padding: 1.5rem;
+}
+
+.form-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.tab {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #6c757d;
+  border-bottom: 2px solid transparent;
+}
+
+.tab i {
+  margin-right: 6px;
+}
+
+.tab.active {
+  color: #00adb5;
+  border-bottom-color: #00adb5;
 }
 
 .form-section {
@@ -1043,8 +1145,8 @@ onMounted(async () => {
     gap: 0.5rem;
   }
 }
+/* PAMPALIIT LANG NG PRODUCTS MASTER - IDAGDAG SA DULO */
 
-/* PAMPALIIT LANG NG PRODUCTS MASTER */
 .card {
   padding: 0.8rem !important;
 }
@@ -1106,6 +1208,11 @@ onMounted(async () => {
   font-size: 0.6rem !important;
 }
 
+.pack-size {
+  padding: 2px 6px !important;
+  font-size: 0.65rem !important;
+}
+
 .price-cell .price {
   font-size: 0.7rem !important;
 }
@@ -1118,9 +1225,17 @@ onMounted(async () => {
   font-size: 0.7rem !important;
 }
 
+.stock-base {
+  font-size: 0.55rem !important;
+}
+
 .reorder-value {
   padding: 2px 8px !important;
   font-size: 0.6rem !important;
+}
+
+.reorder-base {
+  font-size: 0.5rem !important;
 }
 
 .status-badge {
@@ -1163,6 +1278,15 @@ onMounted(async () => {
 
 .modal-body {
   padding: 0.8rem !important;
+}
+
+.form-tabs {
+  margin-bottom: 0.8rem !important;
+}
+
+.tab {
+  padding: 4px 12px !important;
+  font-size: 0.7rem !important;
 }
 
 .form-row {
