@@ -123,12 +123,7 @@
                 <input type="number" v-model="order.quantity" min="1" 
                        class="qty-input" @change="updateAndSaveOrder(order)" />
               </td>
-              <td>
-                <select v-model="order.unit" @change="updateAndSaveOrder(order)" class="unit-select">
-                  <option value="BASE">Piece (pcs)</option>
-                  <option value="PACK">Pack ({{ order.packSize }} pcs)</option>
-                </select>
-              </td>
+              
               <td class="price-cell">
                 <i class="fas fa-peso-sign"></i>
                 <input type="number" step="0.01" v-model="order.unitPrice" 
