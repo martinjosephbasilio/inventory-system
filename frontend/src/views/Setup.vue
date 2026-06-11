@@ -199,7 +199,7 @@
                     <span class="currency"><i class="fas fa-peso-sign"></i></span>
                     <input type="number" step="0.01" v-model.number="form.sell_pack" class="form-control" />
                   </div>
-                  <small>Presyo kapag bumili ang customer ng isang pack</small>
+                  
                 </div>
               </div>
             </div>
