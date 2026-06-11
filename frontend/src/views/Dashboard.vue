@@ -39,7 +39,7 @@
           <div class="stat-icon"><i class="fas fa-chart-simple"></i></div>
           <div class="stat-info">
             <h4>Gross Sales</h4>
-            <div class="value">₱{{ formatNumber(grossSales) }}</div>
+            <div class="value">₱ {{ formatNumber(grossSales) }}</div>
             <small>From OUT transactions</small>
           </div>
         </div>

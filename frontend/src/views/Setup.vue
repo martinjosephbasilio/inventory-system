@@ -194,13 +194,13 @@
               <div class="section-title"><i class="fas fa-coins"></i> Pricing (Philippine Peso)</div>
               <div class="form-row">
                 <div class="form-group">
-                  <label>Selling Price (per Pack)</label>
-                  <div class="currency-input">
-                    <span class="currency"><i class="fas fa-peso-sign"></i></span>
-                    <input type="number" step="0.01" v-model.number="form.sell_pack" class="form-control" />
-                  </div>
-                  
-                </div>
+  <label>Selling Price (per Pack)</label>
+  <div class="currency-input">
+    <span class="currency">₱</span>
+    <input type="number" step="0.01" v-model.number="form.sell_pack" class="form-control" placeholder="0.00" />
+  </div>
+  <small>Presyo kapag bumili ang customer ng isang pack</small>
+</div>
               </div>
             </div>
 
