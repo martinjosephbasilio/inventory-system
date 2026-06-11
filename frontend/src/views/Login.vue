@@ -13,26 +13,28 @@
       <div class="login-form">
         <div class="form-group">
           <label><i class="fas fa-user"></i> Username</label>
-          <input type="text" id="username" placeholder="Enter your username" />
+          <input type="text" v-model="username" placeholder="Enter your username" @keypress="handleEnter" />
         </div>
         
         <div class="form-group">
           <label><i class="fas fa-lock"></i> Password</label>
           <div class="password-wrapper">
-            <input :type="passwordVisible ? 'text' : 'password'" id="password" placeholder="Enter your password" />
+            <input :type="passwordVisible ? 'text' : 'password'" v-model="password" placeholder="Enter your password" @keypress="handleEnter" />
             <button type="button" class="toggle-password" @click="togglePasswordVisibility">
               <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
             </button>
           </div>
         </div>
         
-        <button id="loginBtn" class="login-btn">
-          <span>Login</span>
-          <i class="fas fa-arrow-right"></i>
+        <button @click="doLogin" :disabled="isLoading" class="login-btn">
+          <span>{{ isLoading ? 'Logging in...' : 'Login' }}</span>
+          <i :class="isLoading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'"></i>
         </button>
       </div>
       
-      <div id="errorMessage" class="error-message" style="display: none;"></div>
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
       
       <div class="forgot-password">
         <router-link to="/forgot-password">Forgot Password?</router-link>
@@ -54,112 +56,75 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
-const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
-const passwordVisible = ref(false)
+const authStore = useAuthStore()
 
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
+
+// Reactive variables
+const username = ref('')
+const password = ref('')
+const passwordVisible = ref(false)
+const isLoading = ref(false)
+const errorMessage = ref('')
+
+// Toggle password visibility
 const togglePasswordVisibility = () => {
   passwordVisible.value = !passwordVisible.value
 }
 
-// Function to show error message (stays for 30 minutes = 1,800,000 milliseconds)
-let errorTimeout = null
-
-const showError = (message) => {
-  const errorDiv = document.getElementById('errorMessage')
-  
-  // Clear previous timeout
-  if (errorTimeout) {
-    clearTimeout(errorTimeout)
+// Handle Enter key
+const handleEnter = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    doLogin()
   }
-  
-  // Show error
-  errorDiv.textContent = message
-  errorDiv.style.display = 'block'
-  
-  // Auto hide after 30 minutes
-  errorTimeout = setTimeout(() => {
-    errorDiv.style.display = 'none'
-    errorTimeout = null
-  }, 1800000)
 }
 
 // Login function
 const doLogin = async () => {
-  const usernameInput = document.getElementById('username')
-  const passwordInput = document.getElementById('password')
-  const loginBtn = document.getElementById('loginBtn')
-  const errorDiv = document.getElementById('errorMessage')
+  // Clear previous error
+  errorMessage.value = ''
   
-  const username = usernameInput.value
-  const password = passwordInput.value
-  
-  errorDiv.style.display = 'none'
-  
-  if (!username || !password) {
-    showError('⚠️ Please enter username and password')
+  // Validate inputs
+  if (!username.value || !password.value) {
+    errorMessage.value = '⚠️ Please enter username and password'
     return
   }
   
-  loginBtn.disabled = true
-  loginBtn.innerHTML = '<span>Logging in...</span><i class="fas fa-spinner fa-spin"></i>'
+  isLoading.value = true
   
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ 
+        username: username.value, 
+        password: password.value 
+      })
     })
     
     const data = await response.json()
     
     if (data.success) {
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-      window.location.href = '/'
+      // Save to auth store (reactive)
+      authStore.setToken(data.token)
+      authStore.setUser(data.user)
+      
+      // Navigate to dashboard without full page reload
+      router.push('/')
     } else {
-      showError(`❌ ${data.error || 'Invalid username or password'}`)
-      loginBtn.disabled = false
-      loginBtn.innerHTML = '<span>Login</span><i class="fas fa-arrow-right"></i>'
+      errorMessage.value = `❌ ${data.error || 'Invalid username or password'}`
     }
   } catch (error) {
-    showError('❌ Login failed. Please check your connection.')
-    loginBtn.disabled = false
-    loginBtn.innerHTML = '<span>Login</span><i class="fas fa-arrow-right"></i>'
+    console.error('Login error:', error)
+    errorMessage.value = '❌ Login failed. Please check your connection.'
+  } finally {
+    isLoading.value = false
   }
 }
-
-// Setup after DOM is ready
-setTimeout(() => {
-  const loginBtn = document.getElementById('loginBtn')
-  const usernameInput = document.getElementById('username')
-  const passwordInput = document.getElementById('password')
-  
-  if (loginBtn) {
-    loginBtn.onclick = function(e) {
-      e.preventDefault()
-      doLogin()
-    }
-  }
-  
-  // Enter key functionality - WITHOUT page refresh
-  const handleEnter = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      e.stopPropagation()
-      doLogin()
-    }
-  }
-  
-  if (usernameInput) {
-    usernameInput.addEventListener('keypress', handleEnter)
-  }
-  
-  if (passwordInput) {
-    passwordInput.addEventListener('keypress', handleEnter)
-  }
-}, 100)
 
 const goToRegister = () => {
   router.push('/register')
@@ -350,7 +315,7 @@ const goToRegister = () => {
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
-.login-btn:hover {
+.login-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #b91c1c, #991b1b);
   transform: scale(1.02);
   box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
@@ -368,7 +333,7 @@ const goToRegister = () => {
   transition: transform 0.2s;
 }
 
-.login-btn:hover i {
+.login-btn:hover:not(:disabled) i {
   transform: translateX(3px);
 }
 

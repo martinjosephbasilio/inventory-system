@@ -39,7 +39,7 @@
           <div class="stat-icon"><i class="fas fa-chart-simple"></i></div>
           <div class="stat-info">
             <h4>Gross Sales</h4>
-            <div class="value">₱{{ formatNumber(store.dashboard.gross_sales) }}</div>
+            <div class="value">₱{{ formatNumber(grossSales) }}</div>
             <small>From OUT transactions</small>
           </div>
         </div>
@@ -48,8 +48,8 @@
           <div class="stat-icon"><i class="fas fa-trophy"></i></div>
           <div class="stat-info">
             <h4>Net Profit</h4>
-            <div class="value" :class="store.dashboard.profit >= 0 ? 'profit-positive' : 'profit-negative'">
-              ₱{{ formatNumber(store.dashboard.profit) }}
+            <div class="value" :class="netProfit >= 0 ? 'profit-positive' : 'profit-negative'">
+              ₱{{ formatNumber(netProfit) }}
             </div>
             <small>Sales - COGS - Expenses</small>
           </div>
@@ -261,13 +261,18 @@
 
 <script setup>
 import { useInventoryStore } from '../stores/inventory'
+import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 import { ref, computed, onMounted, inject } from 'vue'
+import axios from 'axios'
 
 const store = useInventoryStore()
+const authStore = useAuthStore()
 const router = useRouter()
 const showToast = inject('showToast')
 const showConfirm = inject('showConfirm')
+
+const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 
 const showQuickModal = ref(false)
 const quickType = ref('IN')
@@ -279,6 +284,26 @@ const quickCustomerName = ref('')
 
 // Low stock threshold in packs
 const LOW_STOCK_THRESHOLD = 20
+
+// ========== BAGONG LOGIC: WALA NANG COGS ==========
+// Gross Sales = OUT transactions lang (benta)
+const grossSales = computed(() => {
+  return store.movements
+    ?.filter(m => m.type === 'OUT')
+    .reduce((sum, m) => sum + (Number(m.total_sales) || 0), 0) || 0
+})
+
+// ✅ COGS = 0 (WALA NA! Lahat ng gastos nasa Expenses na)
+const cogs = computed(() => {
+  return 0
+})
+
+// Net Profit = Sales - Expenses (wala nang COGS)
+const netProfit = computed(() => {
+  const sales = grossSales.value
+  const expenses = Number(store.dashboard?.total_expenses) || 0
+  return sales - expenses
+})
 
 // Selected item for preview
 const selectedQuickItem = computed(() => {
@@ -311,7 +336,6 @@ const outOfStockItems = computed(() => {
   return store.stock?.filter(item => item.current_stock_base === 0) || []
 })
 
-// FIXED: Low stock detection based on packs (20 packs or below)
 const lowStockItems = computed(() => {
   return store.stock?.filter(item => {
     const stockInPacks = item.boxes || 0
@@ -321,13 +345,13 @@ const lowStockItems = computed(() => {
 
 const totalCostValue = computed(() => {
   return store.stock?.reduce((sum, item) => {
-    return sum + (item.current_stock_base * item.cost_base)
+    return sum + (item.current_stock_base * (item.cost_base || 0))
   }, 0) || 0
 })
 
 const totalSellValue = computed(() => {
   return store.stock?.reduce((sum, item) => {
-    return sum + (item.current_stock_base * item.sell_base)
+    return sum + (item.current_stock_base * (item.sell_base || 0))
   }, 0) || 0
 })
 
@@ -461,6 +485,15 @@ const saveQuickMovement = async () => {
   }
 
   try {
+    const token = authStore.getToken()
+    if (!token) {
+      showToast('Session expired. Please login again.', 'error')
+      router.push('/login')
+      return
+    }
+    
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    
     await store.addMovement(movement)
     await store.fetchStock()
     await store.fetchDashboard()
@@ -470,7 +503,13 @@ const saveQuickMovement = async () => {
     showToast(`✅ ${quickType.value === 'IN' ? 'Stock IN' : 'Stock OUT'} recorded successfully!`, 'success')
   } catch (error) {
     console.error('Error saving movement:', error)
-    showToast('Error saving movement. Please try again.', 'error')
+    if (error.response?.status === 401) {
+      showToast('Session expired. Please login again.', 'error')
+      authStore.logout()
+      router.push('/login')
+    } else {
+      showToast('Error saving movement. Please try again.', 'error')
+    }
   }
 }
 
@@ -487,14 +526,38 @@ const goToOrderSlip = () => {
 }
 
 onMounted(async () => {
-  await store.fetchDashboard()
-  await store.fetchStock()
-  await store.fetchItems()
-  await store.fetchMovements()
+  console.log('Dashboard mounting...')
+  
+  const localToken = localStorage.getItem('token')
+  const localUser = localStorage.getItem('user')
+  
+  if (!localToken || !localUser) {
+    console.log('No token found, redirecting to login')
+    router.push('/login')
+    return
+  }
+  
+  authStore.restoreSession()
+  axios.defaults.headers.common['Authorization'] = `Bearer ${localToken}`
+  
+  try {
+    await store.fetchDashboard()
+    await store.fetchStock()
+    await store.fetchItems()
+    await store.fetchMovements()
+    console.log('All data loaded! Gross Sales:', grossSales.value, 'Net Profit:', netProfit.value)
+  } catch (error) {
+    console.error('Error loading data:', error)
+    if (error.response?.status === 401) {
+      authStore.logout()
+      router.push('/login')
+    }
+  }
 })
 </script>
 
 <style scoped>
+/* Your existing styles here - keep them as they are */
 .card {
   background: white;
   border-radius: 12px;
@@ -1030,14 +1093,12 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 }
-/* ===== COMPACT DASHBOARD - PAMPALIIT LANG ===== */
 
-/* Palitin ang main card */
+/* Compact styles */
 .card {
   padding: 0.8rem !important;
 }
 
-/* Palitin ang header */
 .header-actions {
   margin-bottom: 0.8rem !important;
 }
@@ -1051,13 +1112,11 @@ onMounted(async () => {
   font-size: 0.7rem !important;
 }
 
-/* Palitin ang stats grid */
 .stats-grid {
   gap: 0.6rem !important;
   margin-bottom: 1rem !important;
 }
 
-/* Palitin ang stat cards */
 .stat-card {
   padding: 0.5rem 0.7rem !important;
   gap: 0.5rem !important;
@@ -1086,7 +1145,6 @@ onMounted(async () => {
   font-size: 0.5rem !important;
 }
 
-/* Palitin ang two columns */
 .two-columns {
   gap: 0.8rem !important;
 }
@@ -1095,7 +1153,6 @@ onMounted(async () => {
   gap: 0.8rem !important;
 }
 
-/* Palitin ang info cards */
 .info-card {
   padding: 0.7rem !important;
 }
@@ -1106,7 +1163,6 @@ onMounted(async () => {
   padding-bottom: 0.3rem !important;
 }
 
-/* Palitin ang alerts */
 .alert-section {
   margin-bottom: 0.6rem !important;
 }
@@ -1139,7 +1195,6 @@ onMounted(async () => {
   font-size: 0.6rem !important;
 }
 
-/* Palitin ang recent transactions */
 .recent-item {
   padding: 0.25rem !important;
   gap: 0.4rem !important;
@@ -1163,7 +1218,6 @@ onMounted(async () => {
   font-size: 0.6rem !important;
 }
 
-/* Palitin ang quick actions */
 .quick-actions {
   gap: 0.5rem !important;
 }
@@ -1177,7 +1231,6 @@ onMounted(async () => {
   margin-right: 3px !important;
 }
 
-/* Palitin ang summary rows */
 .summary-row {
   padding: 0.25rem 0 !important;
   font-size: 0.7rem !important;
@@ -1191,7 +1244,6 @@ onMounted(async () => {
   padding-top: 0.4rem !important;
 }
 
-/* Palitin ang category stats */
 .category-stats {
   gap: 0.4rem !important;
 }
@@ -1214,7 +1266,6 @@ onMounted(async () => {
   font-size: 0.6rem !important;
 }
 
-/* Palitin ang preview */
 .preview {
   padding: 0.5rem !important;
   margin-top: 0.5rem !important;
@@ -1228,7 +1279,6 @@ onMounted(async () => {
   font-size: 0.6rem !important;
 }
 
-/* Palitin ang modal */
 .modal-content {
   width: 400px !important;
 }
@@ -1272,13 +1322,11 @@ onMounted(async () => {
   font-size: 0.65rem !important;
 }
 
-/* Palitin ang no data */
 .no-data {
   padding: 0.5rem !important;
   font-size: 0.65rem !important;
 }
 
-/* Responsive - mas compact */
 @media (max-width: 900px) {
   .stats-grid {
     gap: 0.5rem !important;

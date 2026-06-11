@@ -3,7 +3,7 @@
     <div class="card">
       <div class="header-actions">
         <h3><i class="fas fa-chart-line"></i> Income Statement</h3>
-        <p>Financial performance report - Sales, COGS, Expenses, and Profit</p>
+        <p>Financial performance report - Sales, Expenses, and Profit</p>
       </div>
       
       <!-- Year Selector -->
@@ -32,29 +32,11 @@
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-boxes"></i></div>
-          <div class="stat-info">
-            <h4>COGS (Cost of Goods Sold)</h4>
-            <div class="value">₱{{ formatNumber(cogs) }}</div>
-            <small>Cost of IN transactions</small>
-          </div>
-        </div>
-        <div class="stat-card profit-card">
-          <div class="stat-icon"><i class="fas fa-chart-simple"></i></div>
-          <div class="stat-info">
-            <h4>Gross Profit</h4>
-            <div class="value" :class="grossProfit >= 0 ? 'profit-positive' : 'profit-negative'">
-              ₱{{ formatNumber(grossProfit) }}
-            </div>
-            <small>Sales - COGS</small>
-          </div>
-        </div>
-        <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-coins"></i></div>
           <div class="stat-info">
-            <h4>Operating Expenses</h4>
+            <h4>Total Expenses</h4>
             <div class="value">₱{{ formatNumber(totalExpenses) }}</div>
-            <small>From Expenses tracker</small>
+            <small>Including Raw Materials, Rent, Utilities, etc.</small>
           </div>
         </div>
         <div class="stat-card net-card">
@@ -64,7 +46,7 @@
             <div class="value" :class="netProfit >= 0 ? 'profit-positive' : 'profit-negative'">
               ₱{{ formatNumber(netProfit) }}
             </div>
-            <small>Gross Profit - Expenses</small>
+            <small>Sales - Total Expenses</small>
           </div>
         </div>
       </div>
@@ -77,9 +59,7 @@
             <tr>
               <th>Month</th>
               <th>Sales (OUT)</th>
-              <th>COGS (IN)</th>
-              <th>Gross Profit</th>
-              <th>Expenses</th>
+              <th>Total Expenses</th>
               <th>Net Profit</th>
             </tr>
           </thead>
@@ -87,10 +67,6 @@
             <tr v-for="month in months" :key="month.num">
               <td>{{ month.name }}</td>
               <td class="amount">₱{{ formatNumber(monthlySales[month.num]) }}</td>
-              <td class="amount">₱{{ formatNumber(monthlyCogs[month.num]) }}</td>
-              <td class="amount" :class="getProfitClass(monthlyGrossProfit[month.num])">
-                ₱{{ formatNumber(monthlyGrossProfit[month.num]) }}
-              </td>
               <td class="amount">₱{{ formatNumber(monthlyExpenses[month.num]) }}</td>
               <td class="amount" :class="getProfitClass(monthlyNetProfit[month.num])">
                 ₱{{ formatNumber(monthlyNetProfit[month.num]) }}
@@ -101,10 +77,6 @@
             <tr>
               <th>TOTAL</th>
               <th class="amount">₱{{ formatNumber(grossSales) }}</th>
-              <th class="amount">₱{{ formatNumber(cogs) }}</th>
-              <th class="amount" :class="grossProfit >= 0 ? 'profit-positive' : 'profit-negative'">
-                ₱{{ formatNumber(grossProfit) }}
-              </th>
               <th class="amount">₱{{ formatNumber(totalExpenses) }}</th>
               <th class="amount" :class="netProfit >= 0 ? 'profit-positive' : 'profit-negative'">
                 ₱{{ formatNumber(netProfit) }}
@@ -124,6 +96,9 @@
             </span>
             <span class="category-amount">₱{{ formatNumber(amount) }}</span>
           </div>
+          <div v-if="Object.keys(expensesByCategory).length === 0" class="no-expenses">
+            <i class="fas fa-info-circle"></i> No expenses recorded for this year
+          </div>
         </div>
       </div>
     </div>
@@ -132,17 +107,18 @@
 
 <script setup>
 import { useInventoryStore } from '../stores/inventory'
+import { useAuthStore } from '../stores/auth'
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 const store = useInventoryStore()
+const authStore = useAuthStore()
 const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 
 const selectedYear = ref(new Date().getFullYear())
-const availableYears = ref([2023, 2024, 2025, 2026, 2027])
+const availableYears = ref([2023, 2024, 2025, 2026, 2027, 2028])
 
 const monthlySales = ref({})
-const monthlyCogs = ref({})
 const monthlyExpenses = ref({})
 const expensesByCategory = ref({})
 
@@ -153,7 +129,8 @@ const months = [
   { num: 10, name: 'October' }, { num: 11, name: 'November' }, { num: 12, name: 'December' }
 ]
 
-// COMPUTED WITH NUMBER CONVERSION
+// ========== SIMPLENG LOGIC ==========
+// Sales = OUT transactions lang (benta)
 const grossSales = computed(() => {
   let total = 0
   for (let i = 1; i <= 12; i++) {
@@ -162,18 +139,7 @@ const grossSales = computed(() => {
   return total
 })
 
-const cogs = computed(() => {
-  let total = 0
-  for (let i = 1; i <= 12; i++) {
-    total += Number(monthlyCogs.value[i] || 0)
-  }
-  return total
-})
-
-const grossProfit = computed(() => {
-  return grossSales.value - cogs.value
-})
-
+// Total Expenses = Lahat ng gastos (raw materials, rent, utilities, etc.)
 const totalExpenses = computed(() => {
   let total = 0
   for (let i = 1; i <= 12; i++) {
@@ -182,26 +148,18 @@ const totalExpenses = computed(() => {
   return total
 })
 
+// Net Profit = Sales - Lahat ng Expenses
 const netProfit = computed(() => {
-  return grossProfit.value - totalExpenses.value
+  return grossSales.value - totalExpenses.value
 })
 
-const monthlyGrossProfit = computed(() => {
-  const result = {}
-  for (let i = 1; i <= 12; i++) {
-    const sales = Number(monthlySales.value[i] || 0)
-    const cost = Number(monthlyCogs.value[i] || 0)
-    result[i] = sales - cost
-  }
-  return result
-})
-
+// Monthly Net Profit
 const monthlyNetProfit = computed(() => {
   const result = {}
   for (let i = 1; i <= 12; i++) {
-    const gross = Number(monthlyGrossProfit.value[i] || 0)
+    const sales = Number(monthlySales.value[i] || 0)
     const expense = Number(monthlyExpenses.value[i] || 0)
-    result[i] = gross - expense
+    result[i] = sales - expense
   }
   return result
 })
@@ -220,6 +178,7 @@ const getProfitClass = (value) => {
 
 const getCategoryIcon = (category) => {
   const icons = {
+    'Raw Materials': 'fas fa-cubes',
     'Rent': 'fas fa-building',
     'Utilities': 'fas fa-bolt',
     'Salary': 'fas fa-users',
@@ -234,7 +193,6 @@ const loadIncomeData = async () => {
   // Reset data
   for (let i = 1; i <= 12; i++) {
     monthlySales.value[i] = 0
-    monthlyCogs.value[i] = 0
     monthlyExpenses.value[i] = 0
   }
   expensesByCategory.value = {}
@@ -243,7 +201,12 @@ const loadIncomeData = async () => {
   const endDate = `${selectedYear.value}-12-31`
   
   try {
-    // Get movements (IN/OUT)
+    const token = authStore.getToken()
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    }
+    
+    // Get movements - OUT lang ang kunin (Sales)
     const movementsRes = await axios.get(`${API_URL}/movements`, {
       params: { startDate, endDate }
     })
@@ -251,19 +214,15 @@ const loadIncomeData = async () => {
     for (const movement of movementsRes.data) {
       const month = new Date(movement.datetime).getMonth() + 1
       
+      // OUT lang ang Sales (ignore ang IN)
       if (movement.type === 'OUT') {
         const salesAmount = Number(movement.total_sales) || 0
         monthlySales.value[month] = (monthlySales.value[month] || 0) + salesAmount
-      } else if (movement.type === 'IN') {
-        const item = store.items.find(i => i.id === movement.item_id)
-        if (item) {
-          const cost = (movement.base_delta || 0) * (item.cost_base || 0)
-          monthlyCogs.value[month] = (monthlyCogs.value[month] || 0) + cost
-        }
       }
+      // WALA na ang IN sa COGS
     }
     
-    // Get expenses
+    // Get expenses - LAHAT ng gastos dito (kasama raw materials)
     const expensesRes = await axios.get(`${API_URL}/expenses`, {
       params: { startDate, endDate }
     })
@@ -275,22 +234,34 @@ const loadIncomeData = async () => {
       expensesByCategory.value[expense.category] = (expensesByCategory.value[expense.category] || 0) + amount
     }
     
-    console.log('Income Data Loaded - Sales:', monthlySales.value)
-    console.log('Income Data Loaded - COGS:', monthlyCogs.value)
-    console.log('Income Data Loaded - Expenses:', monthlyExpenses.value)
+    console.log('=== SIMPLENG LOGIC ===')
+    console.log('Sales (OUT):', monthlySales.value)
+    console.log('Total Expenses (kasama raw materials):', monthlyExpenses.value)
+    console.log('Net Profit:', netProfit.value)
     
   } catch (error) {
     console.error('Error loading income data:', error)
+    if (error.response?.status === 401) {
+      authStore.logout()
+    }
   }
 }
 
 onMounted(async () => {
+  authStore.restoreSession()
+  
+  const token = authStore.getToken()
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  }
+  
   await store.fetchItems()
   await loadIncomeData()
 })
 </script>
 
 <style scoped>
+/* Same styles as before - keep them */
 .card {
   background: white;
   border-radius: 12px;
@@ -431,10 +402,6 @@ onMounted(async () => {
   color: #a0aec0;
 }
 
-.profit-card {
-  border-left-color: #17a2b8;
-}
-
 .net-card {
   border-left-color: #ffc107;
 }
@@ -473,12 +440,9 @@ onMounted(async () => {
   border-bottom: 2px solid #1a252f;
 }
 
-/* Right align ang mga amount columns sa header */
 .income-table th:nth-child(2),
 .income-table th:nth-child(3),
-.income-table th:nth-child(4),
-.income-table th:nth-child(5),
-.income-table th:nth-child(6) {
+.income-table th:nth-child(4) {
   text-align: right;
 }
 
@@ -492,12 +456,10 @@ onMounted(async () => {
   background: #f7fafc;
 }
 
-/* Right align ang mga amount cells */
 .amount {
   text-align: right;
 }
 
-/* Left align ang Month column */
 .income-table td:first-child,
 .income-table th:first-child {
   text-align: left;
@@ -512,20 +474,6 @@ onMounted(async () => {
 .income-table tfoot td {
   padding: 12px;
   border-top: 2px solid #cbd5e0;
-}
-
-/* Right align ang tfoot amount columns */
-.income-table tfoot th:nth-child(2),
-.income-table tfoot th:nth-child(3),
-.income-table tfoot th:nth-child(4),
-.income-table tfoot th:nth-child(5),
-.income-table tfoot th:nth-child(6),
-.income-table tfoot td:nth-child(2),
-.income-table tfoot td:nth-child(3),
-.income-table tfoot td:nth-child(4),
-.income-table tfoot td:nth-child(5),
-.income-table tfoot td:nth-child(6) {
-  text-align: right;
 }
 
 .expenses-card {
@@ -575,6 +523,13 @@ onMounted(async () => {
   color: #dc3545;
 }
 
+.no-expenses {
+  text-align: center;
+  padding: 1rem;
+  color: #718096;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: 1fr;
@@ -585,8 +540,8 @@ onMounted(async () => {
     align-items: stretch;
   }
 }
-/* PAMPALIIT LANG NG INCOME STATEMENT - IDAGDAG SA DULO */
 
+/* Compact styles */
 .card {
   padding: 0.8rem !important;
 }
@@ -709,5 +664,10 @@ onMounted(async () => {
 
 .category-amount {
   font-size: 0.65rem !important;
+}
+
+.no-expenses {
+  font-size: 0.65rem !important;
+  padding: 0.5rem !important;
 }
 </style>

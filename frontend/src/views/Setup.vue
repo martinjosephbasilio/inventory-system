@@ -36,7 +36,6 @@
               <th><i class="fas fa-box"></i> Item Name</th>
               <th><i class="fas fa-tags"></i> Category</th>
               <th><i class="fas fa-cubes"></i> Pack Size</th>
-              <th><i class="fas fa-dollar-sign"></i> Cost Price</th>
               <th><i class="fas fa-chart-line"></i> Selling Price</th>
               <th><i class="fas fa-warehouse"></i> Stock</th>
               <th><i class="fas fa-flag"></i> Reorder</th>
@@ -61,14 +60,9 @@
                 <span class="pack-size">{{ item.pack_size }} <i class="fas fa-cube"></i> pcs/pack</span>
                </td>
               <td class="price-cell">
-                <div class="price"><i class="fas fa-peso-sign"></i> {{ formatNumber(item.cost_pack) }}</div>
-                <div class="price-unit">(<i class="fas fa-peso-sign"></i> {{ formatNumber(item.cost_base) }}/pc)</div>
-               </td>
-              <td class="price-cell">
                 <div class="price"><i class="fas fa-peso-sign"></i> {{ formatNumber(item.sell_pack) }}</div>
-                <div class="price-unit">(<i class="fas fa-peso-sign"></i> {{ formatNumber(item.sell_base) }}/pc)</div>
+                <div class="price-unit">per pack</div>
                </td>
-              <!-- FIXED: Stock column - no pcs -->
               <td class="stock-cell">
                 <div class="stock-info">
                   <span class="stock-packs"><i class="fas fa-cubes"></i> {{ item.boxes || 0 }} packs</span>
@@ -95,7 +89,7 @@
                </td>
             </tr>
             <tr v-if="filteredItems.length === 0">
-              <td colspan="10" class="empty-row">
+              <td colspan="9" class="empty-row">
                 <div class="empty-state">
                   <i class="fas fa-box-open empty-icon"></i>
                   <p>No items found</p>
@@ -135,7 +129,6 @@
         <div class="modal-body">
           <div class="form-tabs">
             <div class="tab active"><i class="fas fa-info-circle"></i> Basic Info</div>
-            <div class="tab"><i class="fas fa-dollar-sign"></i> Pricing</div>
             <div class="tab"><i class="fas fa-chart-line"></i> Inventory</div>
           </div>
 
@@ -196,24 +189,9 @@
               </div>
             </div>
 
+            <!-- PRICING SECTION - SELLING PRICE ONLY -->
             <div class="price-section">
               <div class="section-title"><i class="fas fa-coins"></i> Pricing (Philippine Peso)</div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Cost Price (per Pack)</label>
-                  <div class="currency-input">
-                    <span class="currency"><i class="fas fa-peso-sign"></i></span>
-                    <input type="number" step="0.01" v-model.number="form.cost_pack" class="form-control" />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label>Cost Price (per Piece)</label>
-                  <div class="currency-input">
-                    <span class="currency"><i class="fas fa-peso-sign"></i></span>
-                    <input type="number" step="0.01" v-model.number="form.cost_base" class="form-control" />
-                  </div>
-                </div>
-              </div>
               <div class="form-row">
                 <div class="form-group">
                   <label>Selling Price (per Pack)</label>
@@ -221,13 +199,7 @@
                     <span class="currency"><i class="fas fa-peso-sign"></i></span>
                     <input type="number" step="0.01" v-model.number="form.sell_pack" class="form-control" />
                   </div>
-                </div>
-                <div class="form-group">
-                  <label>Selling Price (per Piece)</label>
-                  <div class="currency-input">
-                    <span class="currency"><i class="fas fa-peso-sign"></i></span>
-                    <input type="number" step="0.01" v-model.number="form.sell_base" class="form-control" />
-                  </div>
+                  <small>Presyo kapag bumili ang customer ng isang pack</small>
                 </div>
               </div>
             </div>
@@ -255,14 +227,10 @@
               </div>
               <div class="preview-row">
                 <span><i class="fas fa-cubes"></i> Pack: {{ form.pack_size }} pcs/pack</span>
-                <span><i class="fas fa-coins"></i> Cost: ₱{{ formatNumber(form.cost_pack) }} | Sell: ₱{{
-                  formatNumber(form.sell_pack) }}</span>
+                <span><i class="fas fa-tag"></i> Selling Price: ₱{{ formatNumber(form.sell_pack) }}/pack</span>
               </div>
               <div class="preview-row">
                 <span><i class="fas fa-flag"></i> Reorder at: {{ form.reorder_packs || 20 }} packs ({{ (form.reorder_packs || 20) * form.pack_size }} pcs)</span>
-              </div>
-              <div class="preview-row profit-highlight" v-if="form.sell_pack > form.cost_pack">
-                <i class="fas fa-chart-line"></i> Profit per pack: ₱{{ formatNumber(form.sell_pack - form.cost_pack) }}
               </div>
             </div>
           </div>
@@ -301,10 +269,7 @@ const form = ref({
   unit: 'pack',
   pack_size: 1,
   type: 'Both',
-  cost_pack: 0,
-  cost_base: 0,
   sell_pack: 0,
-  sell_base: 0,
   reorder_packs: 20,
   initial_stock_packs: 0
 })
@@ -321,7 +286,6 @@ const getItemStock = (itemId) => {
 const filteredItems = computed(() => {
   let items = store.items.map(item => {
     const stock = getItemStock(item.id)
-    // Reorder in packs is always 20 (or from item.reorder_packs if exists)
     const reorderInPacks = item.reorder_packs || 20
     return {
       ...item,
@@ -344,7 +308,6 @@ const filteredItems = computed(() => {
   return items
 })
 
-// Stock status based on packs (Low Stock when 20 packs or below)
 const getStockStatusClass = (item) => {
   const stockInPacks = item.boxes || 0
   
@@ -459,10 +422,7 @@ const openAddModal = () => {
     unit: 'pcs',
     pack_size: 1,
     type: 'Both',
-    cost_pack: 0,
-    cost_base: 0,
     sell_pack: 0,
-    sell_base: 0,
     reorder_packs: 20,
     initial_stock_packs: 0
   }
@@ -478,10 +438,7 @@ const openEditModal = (item) => {
     unit: item.unit || 'pcs',
     pack_size: item.pack_size,
     type: item.type,
-    cost_pack: item.cost_pack,
-    cost_base: item.cost_base,
     sell_pack: item.sell_pack,
-    sell_base: item.sell_base,
     reorder_packs: item.reorder_packs || 20,
     initial_stock_packs: 0
   }
@@ -507,10 +464,7 @@ const saveItem = async () => {
     name: form.value.name,
     pack_size: form.value.pack_size,
     type: form.value.type,
-    cost_pack: form.value.cost_pack,
-    cost_base: form.value.cost_base,
     sell_pack: form.value.sell_pack,
-    sell_base: form.value.sell_base,
     reorder_level: reorder_level,
     reorder_packs: form.value.reorder_packs || 20
   }
@@ -565,6 +519,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Same styles as before but adjusted for 9 columns instead of 10 */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -917,7 +872,7 @@ onMounted(async () => {
 .modal-container {
   background: white;
   border-radius: 16px;
-  width: 700px;
+  width: 600px;
   max-width: 95%;
   max-height: 90vh;
   overflow-y: auto;
@@ -1098,14 +1053,6 @@ onMounted(async () => {
   background: none;
 }
 
-.profit-highlight {
-  color: #28a745;
-  font-weight: 500;
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px solid #ddd;
-}
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -1145,8 +1092,8 @@ onMounted(async () => {
     gap: 0.5rem;
   }
 }
-/* PAMPALIIT LANG NG PRODUCTS MASTER - IDAGDAG SA DULO */
 
+/* PAMPALIIT LANG NG PRODUCTS MASTER */
 .card {
   padding: 0.8rem !important;
 }
@@ -1261,7 +1208,7 @@ onMounted(async () => {
 
 /* Modal - mas maliit */
 .modal-container {
-  width: 550px !important;
+  width: 500px !important;
 }
 
 .modal-header {
@@ -1337,10 +1284,6 @@ onMounted(async () => {
 
 .preview-code {
   font-size: 0.6rem !important;
-}
-
-.profit-highlight {
-  font-size: 0.65rem !important;
 }
 
 .modal-footer {

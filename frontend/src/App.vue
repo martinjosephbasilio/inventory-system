@@ -95,12 +95,12 @@
       <div class="content-header">
         <h1><i class="fas fa-chart-pie"></i> {{ currentPageTitle }}</h1>
       </div>
-      <router-view />  <!-- ✅ ITO LANG ANG ISANG router-view -->
+      <router-view />
     </main>
     
     <!-- Show only login page when not logged in -->
     <div v-if="!isLoggedIn" class="login-wrapper">
-      <router-view />  <!-- ✅ ITO PARA SA LOGIN PAGE LANG -->
+      <router-view />
     </div>
 
     <!-- GLOBAL MODALS -->
@@ -130,21 +130,10 @@ const refreshAllData = async () => {
     await store.fetchStock()
     await store.fetchItems()
     await store.fetchDashboard()
+    await store.fetchMovements()
     
-    const token = localStorage.getItem('token')
-    if (token) {
-      try {
-        const response = await axios.get('https://inventory-system-backend-production-0549.up.railway.app/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (response.data) {
-          user.value = response.data
-          localStorage.setItem('user', JSON.stringify(response.data))
-        }
-      } catch (err) {
-        console.log('User refresh error:', err.message)
-      }
-    }
+    // ✅ REMOVED: /api/auth/me call (wala sa backend)
+    // Hindi na kailangan mag-refresh ng user data
     
     lastGlobalRefresh.value = new Date()
   } catch (error) {
@@ -276,6 +265,7 @@ onMounted(() => {
     store.fetchItems()
     store.fetchStock()
     store.fetchDashboard()
+    store.fetchMovements()
   }
   
   if (globalRefreshInterval) clearInterval(globalRefreshInterval)
@@ -682,4 +672,4 @@ th {
     width: auto;
   }
 }
-</style>" " 
+</style>
