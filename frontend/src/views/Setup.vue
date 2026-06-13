@@ -464,8 +464,7 @@ const saveItem = async () => {
     return
   }
   
-  // Convert packs to pieces
-  // I-save ang reorder_packs mula sa form
+  // ✅ Siguraduhing gamitin ang reorder_packs mula sa form
   const reorderPacks = form.value.reorder_packs || 20
   const reorder_level = reorderPacks * form.value.pack_size
   
@@ -476,7 +475,7 @@ const saveItem = async () => {
     type: form.value.type,
     sell_pack: form.value.sell_pack,
     reorder_level: reorder_level,
-    reorder_packs: reorderPacks  // ← SIGURADUHING ITO ANG NASE-SAVE
+    reorder_packs: reorderPacks
   }
   
   if (isEditing.value) {
