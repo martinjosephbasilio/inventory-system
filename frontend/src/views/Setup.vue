@@ -431,6 +431,14 @@ const openAddModal = () => {
 
 const openEditModal = (item) => {
   isEditing.value = true
+  
+  // ✅ Kunin ang reorder_packs mula sa item (kung wala, compute from reorder_level)
+  let reorderPacks = item.reorder_packs
+  if (!reorderPacks && item.reorder_level && item.pack_size) {
+    reorderPacks = item.reorder_level / item.pack_size
+  }
+  reorderPacks = reorderPacks || 20
+  
   form.value = {
     id: item.id,
     name: item.name,
@@ -439,7 +447,7 @@ const openEditModal = (item) => {
     pack_size: item.pack_size,
     type: item.type,
     sell_pack: item.sell_pack,
-    reorder_packs: item.reorder_packs || 20,
+    reorder_packs: reorderPacks,  // ← GAMITIN ANG TAMANG VALUE
     initial_stock_packs: 0
   }
   showModal.value = true
