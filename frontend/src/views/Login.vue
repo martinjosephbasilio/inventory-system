@@ -42,7 +42,7 @@
       
       <div class="login-footer">
         <span class="demo-badge">
-          <i class="fas fa-info-circle"></i> 
+          
         </span>
       </div>
       
