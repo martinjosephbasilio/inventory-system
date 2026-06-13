@@ -6,7 +6,8 @@
         <div class="icon-wrapper">
           <i class="fas fa-boxes"></i>
         </div>
-        <h2>INR&DGMPackaging Corp</h2>
+        <h1>INR&DGM Packaging Corp</h1>
+
         <p>Inventory Management System</p>
       </div>
       
