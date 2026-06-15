@@ -114,16 +114,21 @@ export const useInventoryStore = defineStore('inventory', {
     },
 
     async updateItem(id, item) {
-      try {
-        const res = await axios.put(`/items/${id}`, item)
-        await this.fetchItems()
-        await this.fetchStock()
-        return res.data
-      } catch (error) {
-        console.error('Error updating item:', error)
-        throw error
-      }
-    },
+  try {
+    const res = await axios.put(`/items/${id}`, item)
+    
+    // ✅ I-force refresh ang lahat ng data
+    await this.fetchItems()
+    await this.fetchStock()
+    await this.fetchDashboard()
+    
+    console.log('Update successful, refetched items')
+    return res.data
+  } catch (error) {
+    console.error('Error updating item:', error)
+    throw error
+  }
+},
 
     async deleteItem(id) {
       try {

@@ -10,12 +10,12 @@
       <div class="login-form">
         <div class="form-group">
           <label>New Password</label>
-          <input type="password" v-model="new_password" placeholder="Enter new password" />
+          <input type="password" v-model="password" placeholder="Enter new password" />
         </div>
         
         <div class="form-group">
           <label>Confirm Password</label>
-          <input type="password" v-model="confirm_password" placeholder="Confirm new password" />
+          <input type="password" v-model="confirmPassword" placeholder="Confirm new password" />
         </div>
         
         <button @click="resetPassword" :disabled="loading" class="login-btn">
@@ -41,33 +41,41 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
-const router = useRouter()
 const route = useRoute()
-const new_password = ref('')
-const confirm_password = ref('')
+const router = useRouter()
+const password = ref('')
+const confirmPassword = ref('')
 const loading = ref(false)
 const message = ref('')
 const error = ref('')
+const token = ref('')
 
 const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app/api'
 
+onMounted(() => {
+  token.value = route.query.token
+  if (!token.value) {
+    error.value = 'Invalid reset link. Please request a new one.'
+  }
+})
+
 const resetPassword = async () => {
-  if (!new_password.value) {
+  if (!password.value) {
     error.value = 'Please enter new password'
     return
   }
   
-  if (new_password.value.length < 4) {
-    error.value = 'Password must be at least 4 characters'
+  if (password.value !== confirmPassword.value) {
+    error.value = 'Passwords do not match'
     return
   }
   
-  if (new_password.value !== confirm_password.value) {
-    error.value = 'Passwords do not match'
+  if (password.value.length < 6) {
+    error.value = 'Password must be at least 6 characters'
     return
   }
   
@@ -76,19 +84,19 @@ const resetPassword = async () => {
   error.value = ''
   
   try {
-    const token = route.params.token
     const response = await axios.post(`${API_URL}/auth/reset-password`, {
-      token: token,
-      new_password: new_password.value
+      token: token.value,
+      newPassword: password.value
     })
     
-    message.value = response.data.message || 'Password reset successful! Redirecting to login...'
+    message.value = response.data.message || 'Password reset successful!'
     
     setTimeout(() => {
       router.push('/login')
-    }, 2000)
+    }, 3000)
+    
   } catch (err) {
-    error.value = err.response?.data?.error || 'Invalid or expired reset link'
+    error.value = err.response?.data?.error || 'Invalid or expired token'
   } finally {
     loading.value = false
   }
@@ -96,6 +104,7 @@ const resetPassword = async () => {
 </script>
 
 <style scoped>
+/* Same styles as ForgotPassword.vue */
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -120,7 +129,7 @@ const resetPassword = async () => {
 
 .login-header i {
   font-size: 3rem;
-  color: #28a745;
+  color: #dc3545;
   margin-bottom: 1rem;
 }
 
@@ -156,7 +165,7 @@ const resetPassword = async () => {
 .login-btn {
   width: 100%;
   padding: 12px;
-  background: #28a745;
+  background: #dc3545;
   color: white;
   border: none;
   border-radius: 8px;
@@ -166,7 +175,7 @@ const resetPassword = async () => {
 }
 
 .login-btn:hover {
-  background: #1e7e34;
+  background: #bb2d3b;
 }
 
 .success-message {

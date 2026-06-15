@@ -223,6 +223,8 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+const authRoutes = require('./routes/auth')
+app.use('/api/auth', authRoutes)
 // Change password
 app.put('/api/auth/change-password', authenticateToken, async (req, res) => {
   const { current_password, new_password } = req.body;
@@ -530,24 +532,31 @@ app.post('/api/items', authenticateToken, async (req, res) => {
   }
 });
 
+// ITEMS API - UPDATE
 app.put('/api/items/:id', authenticateToken, async (req, res) => {
-  const { name, pack_size, type, cost_pack, cost_base, sell_pack, sell_base, reorder_level } = req.body;
+  const { id } = req.params;
+  const { name, pack_size, type, sell_pack, reorder_level, reorder_packs } = req.body;
+  
   try {
-    await pool.query(
-      'UPDATE items SET name=$1, pack_size=$2, type=$3, cost_pack=$4, cost_base=$5, sell_pack=$6, sell_base=$7, reorder_level=$8 WHERE id=$9',
-      [name, pack_size, type, cost_pack, cost_base, sell_pack, sell_base, reorder_level, req.params.id]
+    const result = await pool.query(
+      `UPDATE items SET 
+        name = COALESCE($1, name),
+        pack_size = COALESCE($2, pack_size),
+        type = COALESCE($3, type),
+        sell_pack = COALESCE($4, sell_pack),
+        reorder_level = COALESCE($5, reorder_level),
+        reorder_packs = COALESCE($6, reorder_packs)
+      WHERE id = $7 RETURNING *`,
+      [name, pack_size, type, sell_pack, reorder_level, reorder_packs, id]
     );
-    res.json({ updated: true });
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    
+    res.json({ success: true, item: result.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/api/items/:id', authenticateToken, async (req, res) => {
-  try {
-    await pool.query('DELETE FROM items WHERE id=$1', [req.params.id]);
-    res.json({ deleted: true });
-  } catch (err) {
+    console.error('Error updating item:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -609,10 +618,22 @@ app.get('/api/movements', authenticateToken, async (req, res) => {
 });
 
 app.put('/api/movements/:id', authenticateToken, async (req, res) => {
-  const { datetime, type, item_id, item_name, quantity, unit, base_delta, note, sell_price, total_sales, customer_name } = req.body;
   const { id } = req.params;
+  const { datetime, type, item_id, item_name, quantity, unit, base_delta, note, sell_price, total_sales, customer_name } = req.body;
   
   try {
+    console.log('=== UPDATE MOVEMENT ===');
+    console.log('Movement ID:', id);
+    console.log('Request body:', req.body);
+    
+    // ✅ I-log ang values na ipapasok
+    const values = [
+      datetime, type, item_id, item_name, 
+      quantity, unit, base_delta, note || null,
+      sell_price, total_sales, customer_name || null, id
+    ];
+    console.log('Values to update:', values);
+    
     const result = await pool.query(
       `UPDATE movements SET 
         datetime = $1, 
@@ -626,17 +647,24 @@ app.put('/api/movements/:id', authenticateToken, async (req, res) => {
         sell_price = $9, 
         total_sales = $10, 
         customer_name = $11
-      WHERE id = $12 RETURNING id`,
-      [datetime, type, item_id, item_name, quantity, unit, base_delta, note, sell_price, total_sales, customer_name || null, id]
+      WHERE id = $12 
+      RETURNING *`,
+      values
     );
     
-    if (result.rowCount === 0) {
+    if (result.rows.length === 0) {
+      console.log('Movement not found for ID:', id);
       return res.status(404).json({ error: 'Movement not found' });
     }
     
-    res.json({ updated: true, id: id });
+    console.log('Update successful:', result.rows[0]);
+    res.json({ updated: true, movement: result.rows[0] });
+    
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('ERROR DETAILS:');
+    console.error('Message:', err.message);
+    console.error('Stack:', err.stack);
+    res.status(500).json({ error: err.message, details: err.stack });
   }
 });
 

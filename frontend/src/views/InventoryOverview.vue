@@ -30,7 +30,7 @@
                 <strong>{{ item.name }}</strong><br>
                 <span class="item-code">{{ item.id }}</span>
               </td>
-              <td class="center">{{ item.pack_size }} <i class="fas fa-cube"></i> Pcs/pack</td>
+              <td class="center">{{ item.pack_size }} <i class="fas fa-cube"></i> pcs/pack</td>
               <td>
                 <span :class="['type-badge', getTypeClass(item.type)]">
                   <i :class="getTypeIcon(item.type)"></i> {{ item.type }}
@@ -39,12 +39,12 @@
               <td class="price-cell">
                 <span class="price">₱{{ formatNumber(item.cost_pack) }}</span>
                 <span class="price-unit">(Pack)</span><br>
-                <small>₱{{ formatNumber(item.cost_base) }} <i class="fas fa-circle"></i> (Base)</small>
+                <small>₱{{ formatNumber(item.cost_base) }} (Base)</small>
                 </td>
               <td class="price-cell">
                 <span class="price">₱{{ formatNumber(item.sell_pack) }}</span>
                 <span class="price-unit">(Pack)</span><br>
-                <small>₱{{ formatNumber(item.sell_base) }} <i class="fas fa-circle"></i> (Base)</small>
+                <small>₱{{ formatNumber(item.sell_base) }} (Base)</small>
                 </td>
               <td class="stock-cell">
                 <div class="stock-display">
@@ -52,7 +52,7 @@
                   <i class="fas fa-cube"></i> {{ item.pcs }} Pcs
                 </div>
                 <small class="base-info">
-                  <i class="fas fa-database"></i> Base: {{ item.current_stock_base }} Pcs
+                  <i class="fas fa-database"></i> Base: {{ item.current_stock_base }} pcs
                 </small>
                 <div v-if="item.current_stock_base <= item.reorder_level && item.current_stock_base > 0"
                   class="low-stock-badge">
@@ -69,8 +69,11 @@
                 <button class="btn-out" @click="openInOut(item, 'OUT')">
                   OUT <i class="fas fa-arrow-up"></i>
                 </button>
+                <button class="btn-edit" @click="openEditStock(item)" title="Edit Stock">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
                 </td>
-              </tr>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -120,7 +123,6 @@
             <input v-model="note" placeholder="e.g., Received from supplier, Sold to customer" class="form-input" />
           </div>
 
-          <!-- PREVIEW -->
           <div class="preview">
             <strong><i class="fas fa-eye"></i> Preview:</strong>
             <p v-if="modalType === 'IN'">
@@ -150,16 +152,49 @@
         </div>
       </div>
     </div>
+
+    <!-- EDIT STOCK MODAL -->
+    <div v-if="showEditModal" class="modal" @click.self="showEditModal = false">
+      <div class="modal-content edit-modal">
+        <div class="modal-header">
+          <h3><i class="fas fa-edit"></i> Edit Stock: {{ editItem?.name }}</h3>
+          <button class="close-btn" @click="showEditModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="stock-info">
+            <p><strong>Current Stock:</strong> {{ editItem?.boxes || 0 }} packs</p>
+            <p><strong>Pack Size:</strong> {{ editItem?.pack_size }} pcs/pack</p>
+          </div>
+          <div class="form-group">
+            <label>New Stock (in packs):</label>
+            <input type="number" v-model.number="newStockPacks" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Remarks:</label>
+            <input v-model="editRemark" placeholder="e.g., Stock adjustment" class="form-input" />
+          </div>
+          <div class="preview" v-if="newStockPacks !== editItem?.boxes">
+            <strong>Preview:</strong>
+            <p :class="newStockPacks > editItem?.boxes ? 'text-success' : 'text-danger'">
+              {{ newStockPacks > editItem?.boxes ? '➕ Add' : '➖ Remove' }} 
+              {{ Math.abs(newStockPacks - (editItem?.boxes || 0)) }} packs
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showEditModal = false">Cancel</button>
+          <button class="btn-save" @click="saveEditStock">Save</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { useInventoryStore } from '../stores/inventory'
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
 
 const store = useInventoryStore()
-
-// INJECT GLOBAL FUNCTIONS
 const showToast = inject('showToast')
 const showConfirm = inject('showConfirm')
 
@@ -170,19 +205,20 @@ const quantity = ref(1)
 const note = ref('')
 const sellPrice = ref(0)
 
-// Always PACK unit
-const unit = ref('PACK')
+// Edit Stock variables
+const showEditModal = ref(false)
+const editItem = ref(null)
+const newStockPacks = ref(0)
+const editRemark = ref('')
 
-// Compute base delta (quantity × pack_size)
 const baseDelta = computed(() => {
   return quantity.value * (selectedItem.value?.pack_size || 1)
 })
 
-// Total sales for OUT transactions
 const totalSalesAmount = computed(() => {
   if (modalType.value === 'OUT') {
     const price = sellPrice.value || selectedItem.value?.sell_pack || 0
-    return quantity.value * price  // quantity in packs × price per pack
+    return quantity.value * price
   }
   return 0
 })
@@ -210,6 +246,7 @@ const getTypeIcon = (type) => {
 const refreshData = async () => {
   await store.fetchStock()
   await store.fetchDashboard()
+  if (showToast) showToast('Data refreshed!', 'success')
 }
 
 const openInOut = (item, type) => {
@@ -217,51 +254,37 @@ const openInOut = (item, type) => {
   modalType.value = type
   quantity.value = 1
   note.value = ''
-  // Default selling price is per pack
   sellPrice.value = item.sell_pack
   showModal.value = true
 }
 
 const saveMovement = async () => {
-  // Validate quantity
   if (!quantity.value || quantity.value <= 0) {
-    showToast('Please enter a valid quantity', 'error')
+    if (showToast) showToast('Please enter a valid quantity', 'error')
     return
   }
 
-  // Get Philippine time (UTC+8)
   const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  const datetime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  const datetime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
 
-  // Calculate base delta (quantity in packs × pack_size)
   let finalBaseDelta = baseDelta.value
 
-  // Check if OUT and not enough stock
   if (modalType.value === 'OUT' && finalBaseDelta > selectedItem.value.current_stock_base) {
-    showToast(`Not enough stock! Available: ${selectedItem.value.boxes} packs (${selectedItem.value.current_stock_base} pcs)`, 'error')
+    if (showToast) showToast(`Not enough stock! Available: ${selectedItem.value.boxes} packs (${selectedItem.value.current_stock_base} pcs)`, 'error')
     return
   }
 
-  // Ask for customer name ONLY if OUT transaction
   let customerName = null
   if (modalType.value === 'OUT') {
     customerName = prompt('Enter customer name:', 'Walk-in Customer')
     if (customerName === null) return
     if (customerName.trim() === '') customerName = 'Walk-in Customer'
   }
-  // For IN transaction, customerName stays as null (no prompt)
 
-  // Use professional confirm
   const confirmed = await showConfirm({
     type: modalType.value === 'OUT' ? 'warning' : 'info',
     title: modalType.value === 'OUT' ? 'Confirm Stock OUT' : 'Confirm Stock IN',
-    message: `${modalType.value === 'IN' ? 'Add' : 'Remove'} ${quantity.value} Pack(s) of ${selectedItem.value.name}?\n\n${modalType.value === 'IN' ? `This will add ${finalBaseDelta} pieces to inventory.` : `This will remove ${finalBaseDelta} pieces from inventory.`}`,
+    message: `${modalType.value === 'IN' ? 'Add' : 'Remove'} ${quantity.value} Pack(s) of ${selectedItem.value.name}?`,
     confirmText: 'Yes, Proceed',
     cancelText: 'Cancel'
   })
@@ -279,7 +302,7 @@ const saveMovement = async () => {
     note: note.value,
     sell_price: modalType.value === 'OUT' ? (sellPrice.value || selectedItem.value.sell_pack) : null,
     total_sales: totalSalesAmount.value,
-    customer_name: customerName  // For IN ito ay null, for OUT may customer name
+    customer_name: customerName
   }
 
   await store.addMovement(movement)
@@ -287,8 +310,74 @@ const saveMovement = async () => {
   await store.fetchDashboard()
 
   showModal.value = false
-  showToast(`✅ ${modalType.value === 'IN' ? 'Stock IN' : 'Stock OUT'} recorded!`, 'success')
+  if (showToast) showToast(`✅ ${modalType.value === 'IN' ? 'Stock IN' : 'Stock OUT'} recorded!`, 'success')
 }
+
+// EDIT STOCK FUNCTIONS
+const openEditStock = (item) => {
+  editItem.value = item
+  newStockPacks.value = item.boxes
+  editRemark.value = ''
+  showEditModal.value = true
+}
+
+const saveEditStock = async () => {
+  if (!editItem.value) return
+  
+  const oldPacks = editItem.value.boxes
+  const newPacks = newStockPacks.value
+  const difference = newPacks - oldPacks
+  
+  if (difference === 0) {
+    showEditModal.value = false
+    return
+  }
+  
+  const action = difference > 0 ? 'add' : 'remove'
+  const qty = Math.abs(difference)
+  
+  const confirmed = await showConfirm({
+    type: action === 'add' ? 'info' : 'warning',
+    title: action === 'add' ? 'Add Stock' : 'Remove Stock',
+    message: `${action === 'add' ? 'Add' : 'Remove'} ${qty} pack(s) to ${editItem.value.name}?`,
+    confirmText: 'Yes',
+    cancelText: 'Cancel'
+  })
+  
+  if (!confirmed) return
+  
+  const now = new Date()
+  const datetime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+  
+  const movement = {
+    datetime: datetime,
+    type: action === 'add' ? 'IN' : 'OUT',
+    item_id: editItem.value.id,
+    item_name: editItem.value.name,
+    quantity: qty,
+    unit: 'PACK',
+    base_delta: qty * (editItem.value.pack_size || 1),
+    note: editRemark.value || `Stock ${action === 'add' ? 'addition' : 'removal'}`,
+    sell_price: action === 'remove' ? editItem.value.sell_pack : null,
+    total_sales: action === 'remove' ? qty * editItem.value.sell_pack : null,
+    customer_name: action === 'remove' ? 'Stock Adjustment' : null
+  }
+  
+  try {
+    await store.addMovement(movement)
+    await store.fetchStock()
+    await store.fetchDashboard()
+    if (showToast) showToast(`✅ Stock updated to ${newPacks} packs!`, 'success')
+    showEditModal.value = false
+  } catch (error) {
+    if (showToast) showToast('Error updating stock', 'error')
+  }
+}
+
+onMounted(async () => {
+  await store.fetchStock()
+  await store.fetchItems()
+})
 </script>
 
 <style scoped>
@@ -423,17 +512,20 @@ const saveMovement = async () => {
 
 .stock-cell {
   background: #f9f9f9;
-  min-width: 140px;
+  min-width: 200px;
 }
 
 .stock-display {
   font-weight: bold;
   color: #1a2a3a;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
 .stock-display i {
   color: #00adb5;
-  margin-right: 3px;
 }
 
 .base-info {
@@ -500,6 +592,31 @@ const saveMovement = async () => {
   background: #e0a800;
 }
 
+.btn-edit {
+  background: #00adb5;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-edit:hover {
+  background: #008a91;
+}
+
+.text-success {
+  color: #28a745;
+}
+
+.text-danger {
+  color: #dc3545;
+}
+
 /* Modal Styles */
 .modal {
   position: fixed;
@@ -521,6 +638,10 @@ const saveMovement = async () => {
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.edit-modal {
+  width: 400px;
 }
 
 .modal-header {
@@ -581,6 +702,17 @@ const saveMovement = async () => {
   font-size: 0.7rem;
   color: #999;
   display: block;
+}
+
+.stock-info {
+  background: #f0f2f5;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.stock-info p {
+  margin: 5px 0;
 }
 
 .form-group {
@@ -667,152 +799,27 @@ const saveMovement = async () => {
 .btn-save:hover {
   background: #008a91;
 }
-/* ===== COMPACT STOCK INVENTORY - PAMPALIIT LANG ===== */
 
-/* Palitin ang main container */
-.container, .card, .inventory-container {
+/* Compact styles */
+.card {
   padding: 0.8rem !important;
 }
 
-/* Palitin ang header */
-.page-header, .header-actions {
-  margin-bottom: 0.8rem !important;
-}
-
-.page-header h3, .header-actions h3 {
-  font-size: 1rem !important;
-  margin-bottom: 0.2rem !important;
-}
-
-.page-header p, .header-actions p {
-  font-size: 0.7rem !important;
-}
-
-/* Palitin ang table */
-.table, .inventory-table {
-  font-size: 0.7rem !important;
-}
-
-/* Palitin ang table header */
-.table thead th, .inventory-table thead th {
+.inventory-table th {
   padding: 0.4rem 0.3rem !important;
   font-size: 0.65rem !important;
-  white-space: nowrap !important;
 }
 
-/* Palitin ang table cells */
-.table tbody td, .inventory-table tbody td {
+.inventory-table td {
   padding: 0.4rem 0.3rem !important;
-  vertical-align: middle !important;
-}
-
-/* Palitin ang item name at ID */
-.item-name {
-  font-size: 0.75rem !important;
-  font-weight: bold !important;
-}
-
-.item-id {
-  font-size: 0.6rem !important;
-  color: #6c757d !important;
-}
-
-/* Palitin ang badges at tags */
-.badge, .type-badge, .category-tag {
-  padding: 2px 6px !important;
-  font-size: 0.6rem !important;
-}
-
-/* Palitin ang price displays */
-.price-pack, .price-base {
   font-size: 0.7rem !important;
 }
 
-.price-pack small, .price-base small {
-  font-size: 0.55rem !important;
-}
-
-/* Palitin ang stock display */
-.stock-display {
-  font-size: 0.75rem !important;
-  font-weight: bold !important;
-}
-
-.stock-base {
-  font-size: 0.6rem !important;
-  color: #6c757d !important;
-}
-
-/* Palitin ang action buttons */
-.action-buttons {
-  display: flex !important;
-  gap: 0.25rem !important;
-}
-
-.action-btn, .btn-sm {
-  padding: 0.2rem 0.4rem !important;
-  font-size: 0.6rem !important;
-  width: auto !important;
-  min-width: 35px !important;
-}
-
-.action-btn i, .btn-sm i {
-  font-size: 0.55rem !important;
-  margin-right: 2px !important;
-}
-
-/* Palitin ang IN/OUT buttons sa loob ng table */
-.in-btn, .out-btn {
+.in-btn, .out-btn, .btn-edit {
   padding: 0.2rem 0.4rem !important;
   font-size: 0.55rem !important;
 }
 
-/* Palitin ang stats cards sa taas kung meron */
-.stats-grid {
-  gap: 0.6rem !important;
-  margin-bottom: 1rem !important;
-}
-
-.stat-card {
-  padding: 0.5rem 0.7rem !important;
-  gap: 0.5rem !important;
-}
-
-.stat-icon {
-  width: 35px !important;
-  height: 35px !important;
-  font-size: 1rem !important;
-}
-
-.stat-info h4 {
-  font-size: 0.6rem !important;
-}
-
-.stat-info .value {
-  font-size: 0.85rem !important;
-}
-
-/* Palitin ang search/filter bar */
-.search-bar, .filter-bar {
-  margin-bottom: 0.8rem !important;
-}
-
-.search-bar input, .filter-bar select {
-  padding: 0.3rem 0.6rem !important;
-  font-size: 0.7rem !important;
-}
-
-/* Palitin ang pagination */
-.pagination {
-  margin-top: 0.8rem !important;
-}
-
-.pagination .page-link {
-  padding: 0.2rem 0.5rem !important;
-  font-size: 0.65rem !important;
-}
-
-/* Palitin ang modal kung meron */
 .modal-content {
   width: 380px !important;
 }
@@ -846,34 +853,9 @@ const saveMovement = async () => {
   font-size: 0.7rem !important;
 }
 
-/* Responsive - para sa mobile */
 @media (max-width: 768px) {
-  .table thead th {
+  .inventory-table th {
     font-size: 0.55rem !important;
-    padding: 0.3rem 0.2rem !important;
   }
-  
-  .table tbody td {
-    padding: 0.3rem 0.2rem !important;
-  }
-  
-  .item-name {
-    font-size: 0.7rem !important;
-  }
-  
-  .action-btn, .btn-sm {
-    padding: 0.15rem 0.3rem !important;
-    font-size: 0.5rem !important;
-    min-width: 30px !important;
-  }
-  
-  .stock-display {
-    font-size: 0.65rem !important;
-  }
-}
-
-/* Optional: Para sa horizontal scroll kung sobrang daming columns */
-.inventory-table-container {
-  overflow-x: auto !important;
 }
 </style>

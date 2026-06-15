@@ -5,22 +5,24 @@
         <h3><i class="fas fa-file-invoice"></i> Order Slip / Delivery Receipt</h3>
         <p><i class="fas fa-box-open"></i> Generate order slip for packaging materials</p>
       </div>
+      
       <!-- Auto-refresh indicator -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 6px 12px; background: #f0f4f8; border-radius: 8px;">
-  <div style="display: flex; align-items: center; gap: 15px;">
-    <span style="font-size: 12px; color: #2c3e50;">
-      <i class="fas fa-sync-alt" :class="{ 'fa-spin': false }"></i>
-      Last refresh: {{ lastRefresh.toLocaleTimeString() }}
-    </span>
-    <label style="font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer;">
-      <input type="checkbox" v-model="isAutoRefreshEnabled" style="margin: 0;">
-      Auto-refresh (10 sec)
-    </label>
-  </div>
-  <button @click="loadOrdersForDate" style="background: #2c3e50; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">
-    <i class="fas fa-refresh"></i> Refresh Now
-  </button>
-</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 6px 12px; background: #f0f4f8; border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <span style="font-size: 12px; color: #2c3e50;">
+            <i class="fas fa-sync-alt"></i>
+            Last refresh: {{ lastRefresh.toLocaleTimeString() }}
+          </span>
+          <label style="font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+            <input type="checkbox" v-model="isAutoRefreshEnabled">
+            Auto-refresh (10 sec)
+          </label>
+        </div>
+        <button @click="loadOrdersForDate" class="btn-refresh">
+          <i class="fas fa-refresh"></i> Refresh Now
+        </button>
+      </div>
+      
       <!-- Order Form -->
       <div class="order-form">
         <div class="form-row">
@@ -53,7 +55,7 @@
                 <i class="fas fa-times"></i> Clear
               </button>
               <button @click="deleteSelectedOrders" class="btn-delete-selected" v-if="selectedOrderKeys.length > 0">
-                <i class="fas fa-trash-alt"></i> Delete Selected
+                <i class="fas fa-trash-alt"></i> Delete Selected ({{ selectedOrderKeys.length }})
               </button>
             </div>
           </div>
@@ -76,20 +78,18 @@
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 40px">
-                <input type="checkbox" @change="toggleSelectAll" v-model="selectAllFlag" />
-              </th>
+              <th style="width: 30px"><input type="checkbox" @change="toggleSelectAll" v-model="selectAllFlag" /></th>
               <th>CUSTOMER</th>
               <th>TIME</th>
+              <th>ITEM CODE</th>
               <th>ITEM NAME</th>
               <th>CATEGORY</th>
               <th>AVAILABLE</th>
               <th>QTY</th>
-              <th>UNIT</th>
               <th>UNIT PRICE</th>
               <th>AMOUNT</th>
               <th>REMARKS</th>
-              <th style="width: 80px">ACTION</th>
+              <th style="width: 70px">ACTION</th>
             </tr>
           </thead>
           <tbody>
@@ -97,16 +97,10 @@
               <td class="center">
                 <input type="checkbox" v-model="selectedOrderKeys" :value="order.key" />
               </td>
-              <td>
-                <strong>{{ order.customerName }}</strong>
-              </td>
-              <td>
-                {{ order.timeDisplay }}
-              </td>
-              <td>
-                <strong>{{ order.itemName }}</strong><br>
-                <small class="item-code">{{ order.itemId }}</small>
-              </td>
+              <td><strong>{{ order.customerName }}</strong></td>
+              <td>{{ order.timeDisplay }}</td>
+              <td><code class="item-code">{{ order.itemId }}</code></td>
+              <td><strong>{{ order.itemName }}</strong></td>
               <td>
                 <span :class="['cat-badge', getCategoryClass(order.category)]">
                   <i :class="getCategoryIcon(order.category)"></i> {{ order.category || 'Packaging' }}
@@ -115,19 +109,19 @@
               <td>
                 <span :class="['stock-badge', getStockClass(order.currentStock, order.reorderLevel)]">
                   <i :class="getStockIcon(order.currentStock, order.reorderLevel)"></i>
-                  {{ order.boxes || 0 }} packs<br>
-                  <small>{{ order.pcs || 0 }} pcs left</small>
+                  {{ order.boxes || 0 }} packs left
                 </span>
               </td>
               <td>
                 <input type="number" v-model="order.quantity" min="1" 
                        class="qty-input" @change="updateAndSaveOrder(order)" />
               </td>
-              
-              <td class="price-cell">
-                <i class="fas fa-peso-sign"></i>
-                <input type="number" step="0.01" v-model="order.unitPrice" 
-                        class="price-input" @change="updateAndSaveOrder(order)" />
+              <td>
+                <div class="price-wrapper">
+                  <i class="fas fa-peso-sign"></i>
+                  <input type="number" step="0.01" v-model="order.unitPrice" 
+                         class="price-input" @change="updateAndSaveOrder(order)" />
+                </div>
               </td>
               <td class="amount-cell"><i class="fas fa-peso-sign"></i> {{ formatNumber(order.amount) }}</td>
               <td>
@@ -150,37 +144,21 @@
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="10" class="total-label"><strong>TOTAL AMOUNT:</strong></td>
-              <td colspan="2"><strong class="total-amount">₱{{ formatNumber(totalAmount) }}</strong></td>
+              <td colspan="9" class="total-label"><strong>TOTAL AMOUNT:</strong></td>
+              <td colspan="3"><strong class="total-amount">₱{{ formatNumber(totalAmount) }}</strong></td>
             </tr>
             <tr class="footer-row">
               <td colspan="12" class="footer-cell">
                 <div class="footer-info">
                   <span><i class="fas fa-calendar-alt"></i> Generated Date: {{ currentDate }}</span>
                   <span><i class="fas fa-clock"></i> Generated Time: {{ currentTime }}</span>
+                  <span><i class="fas fa-box"></i> Total Orders: {{ filteredItems.length }}</span>
+                  <span><i class="fas fa-check-circle"></i> Selected: {{ selectedOrderKeys.length }}</span>
                 </div>
               </td>
             </tr>
           </tfoot>
         </table>
-      </div>
-      
-      <div class="actions">
-        <div class="selection-info">
-          <span><i class="fas fa-box"></i> Orders: {{ filteredItems.length }}</span>
-          <span><i class="fas fa-check-circle"></i> Selected: {{ selectedOrderKeys.length }}</span>
-          <span v-if="hasExistingOrders" class="existing-badge">
-            <i class="fas fa-calendar-check"></i> {{ selectedDate }} has orders
-          </span>
-        </div>
-        <div class="action-buttons">
-          <button @click="previewOrderSlip" class="btn-preview">
-            <i class="fas fa-eye"></i> Preview
-          </button>
-          <button @click="downloadPDF" class="btn-pdf">
-            <i class="fas fa-file-pdf"></i> Download PDF
-          </button>
-        </div>
       </div>
     </div>
     
@@ -215,13 +193,6 @@
               <label><i class="fas fa-sort-amount-up"></i> Quantity:</label>
               <input type="number" v-model="editOrderData.quantity" min="1" class="form-input" @change="updateEditTotal" />
             </div>
-            <div class="form-group">
-              <label><i class="fas fa-cubes"></i> Unit:</label>
-              <select v-model="editOrderData.unit" class="form-input" @change="updateEditTotal">
-                <option value="BASE">Piece (pcs)</option>
-                <option value="PACK">Pack ({{ editOrderData?.packSize }} pcs)</option>
-              </select>
-            </div>
           </div>
           
           <div class="form-group">
@@ -238,7 +209,7 @@
             <strong><i class="fas fa-eye"></i> Preview:</strong>
             <p>
               <i class="fas fa-calculator"></i> 
-              {{ editOrderData.quantity }} {{ editOrderData.unit === 'PACK' ? 'Pack(s)' : 'Piece(s)' }} × ₱{{ formatNumber(editOrderData.unitPrice) }} = 
+              {{ editOrderData.quantity }} × ₱{{ formatNumber(editOrderData.unitPrice) }} = 
               <strong>₱{{ formatNumber(editOrderData.amount) }}</strong>
             </p>
           </div>
@@ -253,89 +224,12 @@
         </div>
       </div>
     </div>
-    
-    <!-- PREVIEW MODAL -->
-    <div v-if="showPreview" class="modal" @click.self="showPreview = false">
-      <div class="modal-content preview-modal">
-        <div class="modal-header">
-          <h3>Order Slip Preview</h3>
-          <button class="close-btn" @click="showPreview = false">✕</button>
-        </div>
-        <div class="modal-body preview-body">
-          <div class="receipt">
-            <div class="receipt-header">
-              <h2>INR PACKAGING CORPORATION</h2>
-              <p>Packaging Solutions Provider</p>
-              <p>Tel: (02) 8123-4567 | Email: sales@inrpackaging.com</p>
-              <hr>
-              <h3>ORDER SLIP / DELIVERY RECEIPT</h3>
-            </div>
-            
-            <div class="receipt-info">
-              <p><strong>Date:</strong> {{ selectedDate }}</p>
-              <p><strong>Time:</strong> {{ orderTime || '--:--' }}</p>
-            </div>
-            
-            <table class="receipt-table">
-              <thead>
-                <tr>
-                  <th>Customer</th>
-                  <th>Time</th>
-                  <th>Qty</th>
-                  <th>Unit</th>
-                  <th>Item</th>
-                  <th>Unit Price</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="order in selectedOrders" :key="order.key">
-                  <td>{{ order.customerName }}</td>
-                  <td>{{ order.timeDisplay }}</td>
-                  <td>{{ order.quantity }}</td>
-                  <td>{{ order.unit === 'PACK' ? 'Pack' : 'Piece' }}</td>
-                  <td>{{ order.itemName }}</td>
-                  <td>₱{{ formatNumber(order.unitPrice) }}</td>
-                  <td>₱{{ formatNumber(order.amount) }}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="6" class="total-right"><strong>TOTAL:</strong></td>
-                  <td><strong>₱{{ formatNumber(totalAmount) }}</strong></td>
-                </tr>
-                <tr class="receipt-footer-row">
-                  <td colspan="7" class="receipt-footer-cell">
-                    <div class="receipt-footer-info">
-                      <span>Generated: {{ currentDate }} {{ currentTime }}</span>
-                    </div>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-            
-            <div class="receipt-footer">
-              <p>Thank you for your order!</p>
-              <p>For inquiries, contact us at sales@inrpackaging.com</p>
-              <hr>
-              <p>This is a system-generated order slip.</p>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showPreview = false">Close</button>
-          <button class="btn-save" @click="downloadPDF">Download PDF</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { useInventoryStore } from '../stores/inventory'
-import { ref, computed, onMounted, watch, inject } from 'vue'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
 import axios from 'axios'
 
 const store = useInventoryStore()
@@ -343,23 +237,21 @@ const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app
 const showToast = inject('showToast')
 const showConfirm = inject('showConfirm')
 
-// Get current date and time for generation
+// Date and time
 const now = new Date()
 const currentDateValue = now.toISOString().split('T')[0]
 const currentTimeValue = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-// Selected date for orders (default to current date)
 const selectedDate = ref(currentDateValue)
 const orderTime = ref(currentTimeValue.slice(0, 5))
 const currentDate = ref(currentDateValue)
 const currentTime = ref(currentTimeValue)
 const filterCustomerName = ref('')
 const searchQuery = ref('')
-const showPreview = ref(false)
 const showEditModal = ref(false)
 const editOrderData = ref(null)
 
-// Order items as array (each order is separate)
+// Order items
 const orderItems = ref([])
 const selectedOrderKeys = ref([])
 const selectAllFlag = ref(false)
@@ -367,7 +259,7 @@ const selectAllFlag = ref(false)
 // Auto-refresh
 const lastRefresh = ref(new Date())
 let refreshInterval = null
-const isAutoRefreshEnabled = ref(true) // pwedeng i-off ng user
+const isAutoRefreshEnabled = ref(true)
 
 // Existing orders tracking
 const hasExistingOrders = ref(false)
@@ -378,15 +270,13 @@ const filteredItems = computed(() => {
   
   if (filterCustomerName.value) {
     const query = filterCustomerName.value.toLowerCase()
-    result = result.filter(order => 
-      order.customerName.toLowerCase().includes(query)
-    )
+    result = result.filter(order => order.customerName.toLowerCase().includes(query))
   }
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(order => 
-      order.itemName.toLowerCase().includes(query) ||
+      order.itemName.toLowerCase().includes(query) || 
       order.itemId.toLowerCase().includes(query)
     )
   }
@@ -412,28 +302,18 @@ const formatNumber = (num) => {
 
 const getCategoryClass = (category) => {
   const classes = {
-    'Boxes': 'cat-boxes',
-    'Plastics': 'cat-plastics',
-    'Films': 'cat-films',
-    'Tapes': 'cat-tapes',
-    'Bags': 'cat-bags',
-    'Labels': 'cat-labels',
-    'Tools': 'cat-tools',
-    'Others': 'cat-others'
+    'Boxes': 'cat-boxes', 'Plastics': 'cat-plastics', 'Films': 'cat-films',
+    'Tapes': 'cat-tapes', 'Bags': 'cat-bags', 'Labels': 'cat-labels',
+    'Tools': 'cat-tools', 'Others': 'cat-others'
   }
   return classes[category] || 'cat-others'
 }
 
 const getCategoryIcon = (category) => {
   const icons = {
-    'Boxes': 'fas fa-box',
-    'Plastics': 'fas fa-flask',
-    'Films': 'fas fa-film',
-    'Tapes': 'fas fa-tape',
-    'Bags': 'fas fa-shopping-bag',
-    'Labels': 'fas fa-tag',
-    'Tools': 'fas fa-tools',
-    'Others': 'fas fa-archive'
+    'Boxes': 'fas fa-box', 'Plastics': 'fas fa-flask', 'Films': 'fas fa-film',
+    'Tapes': 'fas fa-tape', 'Bags': 'fas fa-shopping-bag', 'Labels': 'fas fa-tag',
+    'Tools': 'fas fa-tools', 'Others': 'fas fa-archive'
   }
   return icons[category] || 'fas fa-box'
 }
@@ -454,42 +334,41 @@ watch(selectedDate, () => {
   loadOrdersForDate()
 })
 
-// AUTO SAVE when editing directly in table
+// ✅ FIXED: Update and save order with proper data types
 const updateAndSaveOrder = async (order) => {
-  let baseQty = order.quantity
-  if (order.unit === 'PACK') {
-    baseQty = order.quantity * order.packSize
+  const quantity = Number(order.quantity)
+  const unitPrice = Number(order.unitPrice)
+  const amount = quantity * unitPrice
+  order.amount = amount
+  
+  const requestData = {
+    datetime: `${selectedDate.value} ${order.timeDisplay || orderTime.value || '12:00:00'}`,
+    type: 'OUT',
+    item_id: order.itemId,
+    item_name: order.itemName,
+    quantity: quantity,
+    unit: 'PACK',
+    base_delta: quantity,
+    note: order.remark ? String(order.remark) : '',
+    sell_price: unitPrice,
+    total_sales: amount,
+    customer_name: order.customerName || 'Walk-in Customer'
   }
-  order.amount = baseQty * order.unitPrice
   
   try {
-    const baseDelta = order.unit === 'PACK' 
-      ? order.quantity * order.packSize 
-      : order.quantity
-    const totalSales = baseDelta * order.unitPrice
-    
-    const movement = {
-      datetime: `${selectedDate.value} ${order.timeDisplay || orderTime.value || '12:00:00'}`,
-      type: 'OUT',
-      item_id: order.itemId,
-      item_name: order.itemName,
-      quantity: order.quantity,
-      unit: order.unit,
-      base_delta: baseDelta,
-      note: order.remark || '',
-      sell_price: order.unitPrice,
-      total_sales: totalSales,
-      customer_name: order.customerName
-    }
-    
-    await axios.put(`${API_URL}/movements/${order.id}`, movement)
+    await axios.put(`${API_URL}/movements/${order.id}`, requestData)
     showToast('Order updated!', 'success')
-    
     await store.fetchStock()
     await store.fetchDashboard()
   } catch (error) {
-    console.error('Error updating order:', error)
+    console.error('Error updating order:', error.response?.data || error)
     showToast('Error updating order', 'error')
+  }
+}
+
+const updateEditTotal = () => {
+  if (editOrderData.value) {
+    editOrderData.value.amount = Number(editOrderData.value.quantity) * Number(editOrderData.value.unitPrice)
   }
 }
 
@@ -498,53 +377,45 @@ const openEditModal = (order) => {
   showEditModal.value = true
 }
 
+// ✅ FIXED: Save edit order with proper data types
 const saveEditOrder = async () => {
   if (!editOrderData.value) return
   
   const confirmed = await showConfirm({
     type: 'info',
     title: 'Save Changes',
-    message: `Are you sure you want to save changes to this order?`,
+    message: `Save changes to this order?`,
     confirmText: 'Yes, Save',
     cancelText: 'Cancel'
   })
   
   if (!confirmed) return
   
+  const quantity = Number(editOrderData.value.quantity)
+  const unitPrice = Number(editOrderData.value.unitPrice)
+  const amount = quantity * unitPrice
+  editOrderData.value.amount = amount
+  
+  const requestData = {
+    datetime: `${selectedDate.value} ${editOrderData.value.timeDisplay || orderTime.value || '12:00:00'}`,
+    type: 'OUT',
+    item_id: editOrderData.value.itemId,
+    item_name: editOrderData.value.itemName,
+    quantity: quantity,
+    unit: 'PACK',
+    base_delta: quantity,
+    note: editOrderData.value.remark ? String(editOrderData.value.remark) : '',
+    sell_price: unitPrice,
+    total_sales: amount,
+    customer_name: editOrderData.value.customerName || 'Walk-in Customer'
+  }
+  
   try {
-    const baseDelta = editOrderData.value.unit === 'PACK' 
-      ? editOrderData.value.quantity * editOrderData.value.packSize 
-      : editOrderData.value.quantity
-    const totalSales = baseDelta * editOrderData.value.unitPrice
-    
-    const movement = {
-      datetime: `${selectedDate.value} ${editOrderData.value.timeDisplay || orderTime.value || '12:00:00'}`,
-      type: 'OUT',
-      item_id: editOrderData.value.itemId,
-      item_name: editOrderData.value.itemName,
-      quantity: editOrderData.value.quantity,
-      unit: editOrderData.value.unit,
-      base_delta: baseDelta,
-      note: editOrderData.value.remark || '',
-      sell_price: editOrderData.value.unitPrice,
-      total_sales: totalSales,
-      customer_name: editOrderData.value.customerName
-    }
-    
-    await axios.put(`${API_URL}/movements/${editOrderData.value.id}`, movement)
+    await axios.put(`${API_URL}/movements/${editOrderData.value.id}`, requestData)
     
     const index = orderItems.value.findIndex(o => o.key === editOrderData.value.key)
     if (index !== -1) {
-      orderItems.value[index] = {
-        ...orderItems.value[index],
-        customerName: editOrderData.value.customerName,
-        timeDisplay: editOrderData.value.timeDisplay,
-        quantity: editOrderData.value.quantity,
-        unit: editOrderData.value.unit,
-        unitPrice: editOrderData.value.unitPrice,
-        amount: editOrderData.value.amount,
-        remark: editOrderData.value.remark
-      }
+      orderItems.value[index] = { ...orderItems.value[index], ...editOrderData.value }
     }
     
     showToast('Order updated successfully!', 'success')
@@ -552,9 +423,8 @@ const saveEditOrder = async () => {
     await loadOrdersForDate()
     await store.fetchStock()
     await store.fetchDashboard()
-    
   } catch (error) {
-    console.error('Error updating order:', error)
+    console.error('Error updating order:', error.response?.data || error)
     showToast('Error updating order', 'error')
   }
 }
@@ -563,7 +433,7 @@ const deleteSingleOrder = async (order) => {
   const confirmed = await showConfirm({
     type: 'warning',
     title: 'Delete Order',
-    message: `Are you sure you want to delete order for "${order.itemName}"?`,
+    message: `Delete order for "${order.itemName}"?`,
     confirmText: 'Yes, Delete',
     cancelText: 'Cancel'
   })
@@ -572,7 +442,7 @@ const deleteSingleOrder = async (order) => {
   
   try {
     await axios.delete(`${API_URL}/movements/${order.id}`)
-    showToast('Order deleted successfully!', 'success')
+    showToast('Order deleted!', 'success')
     await loadOrdersForDate()
     await store.fetchStock()
     await store.fetchDashboard()
@@ -588,7 +458,7 @@ const deleteSelectedOrders = async () => {
   const confirmed = await showConfirm({
     type: 'warning',
     title: 'Delete Selected Orders',
-    message: `Are you sure you want to delete ${selectedOrderKeys.value.length} selected order(s)?`,
+    message: `Delete ${selectedOrderKeys.value.length} selected order(s)?`,
     confirmText: 'Yes, Delete',
     cancelText: 'Cancel'
   })
@@ -598,11 +468,11 @@ const deleteSelectedOrders = async () => {
   try {
     for (const key of selectedOrderKeys.value) {
       const order = orderItems.value.find(o => o.key === key)
-      if (order && order.id) {
+      if (order?.id) {
         await axios.delete(`${API_URL}/movements/${order.id}`)
       }
     }
-    showToast(`${selectedOrderKeys.value.length} order(s) deleted successfully!`, 'success')
+    showToast(`${selectedOrderKeys.value.length} order(s) deleted!`, 'success')
     selectedOrderKeys.value = []
     await loadOrdersForDate()
     await store.fetchStock()
@@ -617,7 +487,7 @@ const deleteAllOrdersForDate = async () => {
   const confirmed = await showConfirm({
     type: 'warning',
     title: 'Delete All Orders',
-    message: `Are you sure you want to delete ALL ${existingOrdersCount.value} order(s) for ${selectedDate.value}?`,
+    message: `Delete ALL ${existingOrdersCount.value} order(s) for ${selectedDate.value}?`,
     confirmText: 'Yes, Delete All',
     cancelText: 'Cancel'
   })
@@ -626,18 +496,14 @@ const deleteAllOrdersForDate = async () => {
   
   try {
     const response = await axios.get(`${API_URL}/movements`, {
-      params: {
-        startDate: selectedDate.value,
-        endDate: selectedDate.value,
-        type: 'OUT'
-      }
+      params: { startDate: selectedDate.value, endDate: selectedDate.value, type: 'OUT' }
     })
     
     for (const order of response.data) {
       await axios.delete(`${API_URL}/movements/${order.id}`)
     }
     
-    showToast(`All orders for ${selectedDate.value} deleted successfully!`, 'success')
+    showToast(`All orders for ${selectedDate.value} deleted!`, 'success')
     await loadOrdersForDate()
     await store.fetchStock()
     await store.fetchDashboard()
@@ -650,11 +516,7 @@ const deleteAllOrdersForDate = async () => {
 const loadOrdersForDate = async () => {
   try {
     const response = await axios.get(`${API_URL}/movements`, {
-      params: {
-        startDate: selectedDate.value,
-        endDate: selectedDate.value,
-        type: 'OUT'
-      }
+      params: { startDate: selectedDate.value, endDate: selectedDate.value, type: 'OUT' }
     })
     
     existingOrdersCount.value = response.data.length
@@ -669,62 +531,34 @@ const loadOrdersForDate = async () => {
       let timeDisplay = ''
       if (order.datetime) {
         const timePart = order.datetime.split(' ')[1]
-        if (timePart) {
-          timeDisplay = timePart.slice(0, 5)
-        }
+        if (timePart) timeDisplay = timePart.slice(0, 5)
       }
       
-      if (item) {
-        let baseQty = order.quantity
-        if (order.unit === 'PACK') {
-          baseQty = order.quantity * item.pack_size
-        }
-        const amount = baseQty * (order.sell_price || item.sell_base)
-        
-        orderItems.value.push({
-          key: `${order.item_id}_${order.id}`,
-          id: order.id,
-          datetime: order.datetime,
-          itemId: order.item_id,
-          itemName: order.item_name,
-          category: item.category,
-          packSize: item.pack_size,
-          currentStock: item.current_stock_base,
-          boxes: item.boxes,
-          pcs: item.pcs,
-          reorderLevel: item.reorder_level,
-          quantity: order.quantity,
-          unit: order.unit,
-          unitPrice: order.sell_price || item.sell_base,
-          amount: amount,
-          remark: order.note || '',
-          customerName: order.customer_name || 'Walk-in Customer',
-          timeDisplay: timeDisplay
-        })
-      } else {
-        orderItems.value.push({
-          key: `${order.item_id}_${order.id}`,
-          id: order.id,
-          datetime: order.datetime,
-          itemId: order.item_id,
-          itemName: order.item_name,
-          category: 'Unknown',
-          packSize: 1,
-          currentStock: 0,
-          boxes: 0,
-          pcs: 0,
-          reorderLevel: 0,
-          quantity: order.quantity,
-          unit: order.unit,
-          unitPrice: order.sell_price || 0,
-          amount: order.total_sales || 0,
-          remark: order.note || '',
-          customerName: order.customer_name || 'Walk-in Customer',
-          timeDisplay: timeDisplay
-        })
-      }
+      const quantity = Number(order.quantity) || 1
+      const unitPrice = Number(order.sell_price) || (item?.sell_pack || 0)
+      const amount = quantity * unitPrice
+      
+      orderItems.value.push({
+        key: `${order.item_id}_${order.id}`,
+        id: order.id,
+        itemId: order.item_id,
+        itemName: order.item_name,
+        category: item?.category || 'Packaging',
+        packSize: item?.pack_size || 1,
+        currentStock: item?.current_stock_base || 0,
+        boxes: item?.boxes || 0,
+        pcs: item?.pcs || 0,
+        reorderLevel: item?.reorder_level || 20,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        amount: amount,
+        remark: order.note || '',
+        customerName: order.customer_name || 'Walk-in Customer',
+        timeDisplay: timeDisplay
+      })
     }
     
+    lastRefresh.value = new Date()
   } catch (error) {
     console.error('Error loading orders:', error)
   }
@@ -748,123 +582,28 @@ const toggleSelectAll = () => {
   }
 }
 
-const previewOrderSlip = () => {
-  if (selectedOrderKeys.value.length === 0) {
-    showToast('Please select at least one order', 'warning')
-    return
-  }
-  showPreview.value = true
-}
-
-const downloadPDF = () => {
-  if (selectedOrderKeys.value.length === 0) {
-    showToast('Please select at least one order', 'warning')
-    return
-  }
-  
-  const doc = new jsPDF({
-    unit: 'mm',
-    format: 'a4',
-    orientation: 'portrait'
-  })
-  
-  doc.setFontSize(18)
-  doc.setTextColor(44, 62, 80)
-  doc.text('INR PACKAGING CORPORATION', 105, 20, { align: 'center' })
-  
-  doc.setFontSize(10)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Packaging Solutions Provider', 105, 28, { align: 'center' })
-  doc.text('Tel: (02) 8123-4567 | Email: sales@inrpackaging.com', 105, 34, { align: 'center' })
-  
-  doc.setDrawColor(44, 62, 80)
-  doc.line(20, 40, 190, 40)
-  
-  doc.setFontSize(14)
-  doc.setTextColor(44, 62, 80)
-  doc.text('ORDER SLIP / DELIVERY RECEIPT', 105, 50, { align: 'center' })
-  
-  doc.setFontSize(10)
-  doc.setTextColor(0, 0, 0)
-  doc.text(`Date: ${selectedDate.value}`, 20, 62)
-  doc.text(`Time: ${orderTime.value || '--:--'}`, 20, 70)
-  
-  const tableData = []
-  let grandTotal = 0
-  
-  for (const order of selectedOrders.value) {
-    let baseQty = order.quantity
-    let unitDisplay = order.unit === 'BASE' ? 'Piece' : `Pack (${order.packSize} pcs)`
-    if (order.unit === 'PACK') {
-      baseQty = order.quantity * order.packSize
-    }
-    const amount = baseQty * order.unitPrice
-    grandTotal += amount
-    
-    tableData.push([
-      order.customerName,
-      order.timeDisplay,
-      `${order.quantity}`,
-      unitDisplay,
-      order.itemName,
-      `₱${order.unitPrice.toFixed(2)}`,
-      `₱${amount.toFixed(2)}`,
-      order.remark
-    ])
-  }
-  
-  autoTable(doc, {
-    startY: 78,
-    head: [['Customer', 'Time', 'Qty', 'Unit', 'Item', 'Unit Price', 'Amount', 'Remarks']],
-    body: tableData,
-    theme: 'striped',
-    headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255] },
-    margin: { left: 20, right: 20 }
-  })
-  
-  const finalY = doc.lastAutoTable.finalY + 10
-  doc.setFontSize(12)
-  doc.setTextColor(44, 62, 80)
-  doc.text(`TOTAL AMOUNT: ₱${grandTotal.toFixed(2)}`, 170, finalY, { align: 'right' })
-  doc.setFontSize(8)
-  doc.setTextColor(100, 100, 100)
-  doc.text(`Generated on: ${currentDate.value} ${currentTime.value}`, 20, finalY + 15)
-  doc.setFontSize(9)
-  doc.setTextColor(100, 100, 100)
-  doc.text('Thank you for your order!', 105, finalY + 25, { align: 'center' })
-  doc.text('For inquiries, contact us at sales@inrpackaging.com', 105, finalY + 31, { align: 'center' })
-  doc.text('This is a system-generated order slip.', 105, finalY + 37, { align: 'center' })
-  
-  const safeTime = orderTime.value?.replace(/:/g, '-') || '00-00'
-  doc.save(`OrderSlip_INR_${selectedDate.value}_${safeTime}.pdf`)
-}
-
 onMounted(async () => {
   await store.fetchStock()
   await loadOrdersForDate()
-  // Start auto-refresh every 10 seconds
+  
   if (refreshInterval) clearInterval(refreshInterval)
   refreshInterval = setInterval(() => {
     if (isAutoRefreshEnabled.value) {
       loadOrdersForDate()
-      lastRefresh.value = new Date()
-      console.log('Auto-refreshed orders at:', lastRefresh.value.toLocaleTimeString())
     }
-  }, 5000) // 5 seconds
+  }, 10000)
 })
 
-// Clean up pag umalis sa page
-import { onUnmounted } from 'vue'
 onUnmounted(() => {
   if (refreshInterval) {
     clearInterval(refreshInterval)
     refreshInterval = null
   }
 })
-
 </script>
 
 <style scoped>
+/* Styles - keep your existing styles */
 .card {
   background: white;
   border-radius: 12px;
@@ -886,6 +625,16 @@ onUnmounted(() => {
   color: #666;
   font-size: 0.85rem;
   margin-bottom: 1.5rem;
+}
+
+.btn-refresh {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
 }
 
 .order-form {
@@ -929,12 +678,6 @@ onUnmounted(() => {
   background: white;
 }
 
-.form-input:focus {
-  outline: none;
-  border-color: #2c3e50;
-  box-shadow: 0 0 0 2px rgba(44,62,80,0.1);
-}
-
 .button-group {
   display: flex;
   gap: 0.5rem;
@@ -948,6 +691,7 @@ onUnmounted(() => {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .btn-secondary:hover { background: #4a5568; }
 
 .btn-delete-selected {
@@ -957,11 +701,7 @@ onUnmounted(() => {
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
-.btn-delete-selected:hover { background: #bb2d3b; }
 
 .btn-delete-all {
   background: #dc3545;
@@ -970,13 +710,9 @@ onUnmounted(() => {
   padding: 4px 10px;
   border-radius: 4px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   font-size: 0.7rem;
   margin-left: 10px;
 }
-.btn-delete-all:hover { background: #bb2d3b; }
 
 .date-info { margin-bottom: 1rem; }
 .info-badge { 
@@ -987,16 +723,7 @@ onUnmounted(() => {
   align-items: center; 
   gap: 10px; 
   font-size: 0.85rem; 
-  color: #2d3748; 
   border-left: 3px solid #2c3e50;
-}
-.existing-badge { 
-  background: #ffc107; 
-  color: #333; 
-  padding: 4px 10px; 
-  border-radius: 20px; 
-  font-size: 0.7rem; 
-  font-weight: bold; 
 }
 
 .table-responsive {
@@ -1014,21 +741,15 @@ onUnmounted(() => {
 .items-table th {
   background: #2c3e50;
   color: white;
-  padding: 12px;
+  padding: 10px 8px;
   text-align: left;
   font-weight: 600;
-  border-bottom: 2px solid #1a252f;
 }
 
 .items-table td {
-  padding: 10px;
+  padding: 8px;
   border-bottom: 1px solid #e2e8f0;
-  color: #2d3748;
-  background: white;
-}
-
-.items-table tr:hover {
-  background: #f7fafc;
+  vertical-align: middle;
 }
 
 .selected-row {
@@ -1036,8 +757,11 @@ onUnmounted(() => {
 }
 
 .item-code {
-  font-size: 0.65rem;
-  color: #718096;
+  font-size: 0.7rem;
+  color: #00adb5;
+  background: #e3f2fd;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .qty-input {
@@ -1045,17 +769,6 @@ onUnmounted(() => {
   padding: 4px;
   border: 1px solid #cbd5e0;
   border-radius: 4px;
-  background: white;
-  color: #2d3748;
-}
-
-.unit-select {
-  width: 90px;
-  padding: 4px;
-  border: 1px solid #cbd5e0;
-  border-radius: 4px;
-  background: white;
-  color: #2d3748;
 }
 
 .price-input {
@@ -1063,8 +776,17 @@ onUnmounted(() => {
   padding: 4px;
   border: 1px solid #cbd5e0;
   border-radius: 4px;
-  background: white;
-  color: #2d3748;
+}
+
+.price-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.price-wrapper i {
+  font-size: 0.7rem;
+  color: #6c757d;
 }
 
 .remark-input {
@@ -1072,8 +794,6 @@ onUnmounted(() => {
   padding: 4px;
   border: 1px solid #cbd5e0;
   border-radius: 4px;
-  background: white;
-  color: #2d3748;
 }
 
 .amount-cell {
@@ -1084,34 +804,21 @@ onUnmounted(() => {
 .action-cell {
   display: flex;
   gap: 5px;
-  justify-content: center;
 }
 
-.btn-edit {
-  background: #17a2b8;
-  color: white;
+.btn-edit, .btn-delete-row {
+  padding: 4px 8px;
   border: none;
-  padding: 5px 8px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.7rem;
 }
-.btn-edit:hover { background: #138496; }
 
-.btn-delete-row {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 5px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.7rem;
-}
-.btn-delete-row:hover { background: #bb2d3b; }
+.btn-edit { background: #17a2b8; color: white; }
+.btn-delete-row { background: #dc3545; color: white; }
 
 .total-row {
   background: #f8f9fa;
-  font-weight: bold;
 }
 
 .total-label {
@@ -1123,62 +830,26 @@ onUnmounted(() => {
   font-size: 1.1rem;
 }
 
-.actions {
+.footer-row {
+  background: #f8f9fa;
+}
+
+.footer-cell {
+  padding: 10px !important;
+}
+
+.footer-info {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.selection-info {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: #4a5568;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-preview {
-  background: #17a2b8;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.btn-preview:hover { background: #138496; }
-
-.btn-pdf {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.btn-pdf:hover { background: #bb2d3b; }
-
-.empty-row {
-  text-align: center;
-  padding: 20px;
-  color: #a0aec0;
+  justify-content: flex-end;
+  gap: 20px;
+  font-size: 0.7rem;
+  color: #666;
 }
 
 .center {
   text-align: center;
 }
 
-/* Category Badges */
 .cat-badge {
   padding: 4px 10px;
   border-radius: 20px;
@@ -1198,7 +869,6 @@ onUnmounted(() => {
 .cat-tools { background: #eceff1; color: #455a64; }
 .cat-others { background: #f5f5f5; color: #616161; }
 
-/* Stock Badges */
 .stock-badge {
   display: inline-flex;
   align-items: center;
@@ -1212,6 +882,12 @@ onUnmounted(() => {
 .stock-out { color: #dc3545; background: #f8d7da; }
 .stock-low { color: #856404; background: #fff3cd; }
 .stock-ok { color: #155724; background: #d4edda; }
+
+.empty-row {
+  text-align: center;
+  padding: 20px;
+  color: #a0aec0;
+}
 
 /* Modal */
 .modal {
@@ -1229,24 +905,22 @@ onUnmounted(() => {
 
 .modal-content {
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
 }
 
-.preview-modal { width: 800px; }
-.edit-modal { width: 500px; }
+.edit-modal { width: 450px; }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 16px;
   background: #2c3e50;
   color: white;
-  border-radius: 8px 8px 0 0;
+  border-radius: 12px 12px 0 0;
 }
 
 .close-btn {
@@ -1257,13 +931,12 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.modal-body { padding: 1rem; }
-
+.modal-body { padding: 16px; }
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 0.8rem;
+  gap: 10px;
+  padding: 12px 16px;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -1274,221 +947,36 @@ onUnmounted(() => {
   background: #edf2f7;
   padding: 10px;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .preview {
   background: #f0f2f5;
-  padding: 1rem;
+  padding: 10px;
   border-radius: 8px;
-  margin-top: 1rem;
+  margin-top: 16px;
 }
 
 .btn-cancel {
   background: #718096;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 6px 16px;
+  border-radius: 6px;
   cursor: pointer;
 }
-.btn-cancel:hover { background: #4a5568; }
 
 .btn-save {
   background: #2c3e50;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 6px 16px;
+  border-radius: 6px;
   cursor: pointer;
 }
-.btn-save:hover { background: #1a252f; }
-
-/* Receipt */
-.receipt { font-family: monospace; }
-.receipt-header { text-align: center; margin-bottom: 15px; }
-.receipt-header h2 { font-size: 1rem; margin-bottom: 5px; }
-.receipt-header p { font-size: 0.7rem; margin: 2px 0; }
-.receipt-info { margin-bottom: 10px; font-size: 0.75rem; }
-.receipt-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
-.receipt-table th, .receipt-table td { border: 1px solid #ddd; padding: 4px; text-align: left; }
-.receipt-table th { background: #f0f0f0; }
-.total-right { text-align: right; }
-.receipt-footer { text-align: center; margin-top: 10px; font-size: 0.65rem; }
-
-.footer-row { background: #f8f9fa; }
-.footer-cell { padding: 10px !important; }
-.footer-info { display: flex; justify-content: flex-end; gap: 20px; font-size: 0.7rem; color: #666; }
-.footer-info i { margin-right: 4px; color: #2c3e50; }
-
-.receipt-footer-row { background: #f8f9fa; }
-.receipt-footer-cell { padding: 8px !important; }
-.receipt-footer-info { text-align: right; font-size: 0.65rem; color: #666; }
 
 @media (max-width: 768px) {
   .form-row { flex-direction: column; }
-  .action-buttons { width: 100%; }
-  .action-buttons button { flex: 1; }
-  .action-cell { flex-direction: column; align-items: center; }
-}
-/* PAMPALIIT LANG NG ORDER SLIP TABLE - IDAGDAG SA DULO */
-
-.items-table th {
-  padding: 0.4rem 0.3rem !important;
-  font-size: 0.65rem !important;
-}
-
-.items-table td {
-  padding: 0.35rem 0.25rem !important;
-  font-size: 0.7rem !important;
-}
-
-.qty-input {
-  width: 55px !important;
-  padding: 3px !important;
-  font-size: 0.65rem !important;
-}
-
-.unit-select {
-  width: 85px !important;
-  padding: 3px !important;
-  font-size: 0.65rem !important;
-}
-
-.price-input {
-  width: 75px !important;
-  padding: 3px !important;
-  font-size: 0.65rem !important;
-}
-
-.remark-input {
-  width: 90px !important;
-  padding: 3px !important;
-  font-size: 0.65rem !important;
-}
-
-.cat-badge {
-  padding: 2px 6px !important;
-  font-size: 0.6rem !important;
-}
-
-.stock-badge {
-  padding: 2px 6px !important;
-  font-size: 0.6rem !important;
-  gap: 2px !important;
-}
-
-.btn-edit, .btn-delete-row {
-  padding: 3px 6px !important;
-  font-size: 0.55rem !important;
-}
-
-.amount-cell {
-  font-size: 0.7rem !important;
-}
-
-.card {
-  padding: 0.8rem !important;
-}
-
-.header-actions h3 {
-  font-size: 0.95rem !important;
-}
-
-.header-actions p {
-  font-size: 0.65rem !important;
-  margin-bottom: 0.8rem !important;
-}
-
-.order-form {
-  padding: 0.6rem !important;
-  margin-bottom: 0.6rem !important;
-}
-
-.form-row {
-  gap: 0.5rem !important;
-  margin-bottom: 0.5rem !important;
-}
-
-.form-group label {
-  font-size: 0.65rem !important;
-}
-
-.form-input {
-  padding: 4px 8px !important;
-  font-size: 0.65rem !important;
-}
-
-.btn-secondary, .btn-delete-selected {
-  padding: 4px 10px !important;
-  font-size: 0.6rem !important;
-}
-
-.info-badge {
-  padding: 4px 8px !important;
-  font-size: 0.7rem !important;
-}
-
-.btn-delete-all {
-  padding: 2px 8px !important;
-  font-size: 0.6rem !important;
-}
-
-.summary-info span, .selection-info span {
-  font-size: 0.65rem !important;
-}
-
-.btn-preview, .btn-pdf {
-  padding: 4px 10px !important;
-  font-size: 0.65rem !important;
-}
-
-.total-amount {
-  font-size: 0.9rem !important;
-}
-
-.modal-content {
-  width: 450px !important;
-}
-
-.modal-header {
-  padding: 0.5rem 1rem !important;
-}
-
-.modal-header h3 {
-  font-size: 0.85rem !important;
-}
-
-.modal-body {
-  padding: 0.8rem !important;
-}
-
-.modal-footer {
-  padding: 0.6rem 0.8rem !important;
-}
-
-.selected-item-info {
-  padding: 6px 8px !important;
-  margin-bottom: 0.8rem !important;
-  font-size: 0.7rem !important;
-}
-
-.preview {
-  padding: 0.5rem !important;
-  margin-top: 0.5rem !important;
-}
-
-.preview p {
-  font-size: 0.7rem !important;
-}
-
-.footer-info {
-  font-size: 0.6rem !important;
-  gap: 10px !important;
-}
-
-.empty-row {
-  padding: 0.8rem !important;
-  font-size: 0.7rem !important;
+  .action-cell { flex-direction: column; }
 }
 </style>

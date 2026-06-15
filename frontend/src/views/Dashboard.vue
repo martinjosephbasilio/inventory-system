@@ -9,18 +9,18 @@
       <!-- Stats Cards -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+          <div class="stat-icon"><i class="fas fa-boxes"></i></div>
           <div class="stat-info">
-            <h4>Total Inventory IN</h4>
-            <div class="value">{{ store.dashboard.total_in_base }} <span class="unit">units</span></div>
-            <small>Year to date</small>
+            <h4>Actual Stock</h4>
+            <div class="value">{{ actualStock }} <span class="unit">units</span></div>
+            <small>Current inventory on hand</small>
           </div>
         </div>
         
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
           <div class="stat-info">
-            <h4>Total Inventory OUT</h4>
+            <h4>Total Sales (OUT)</h4>
             <div class="value">{{ store.dashboard.total_out_base }} <span class="unit">units</span></div>
             <small>Year to date</small>
           </div>
@@ -39,7 +39,7 @@
           <div class="stat-icon"><i class="fas fa-chart-simple"></i></div>
           <div class="stat-info">
             <h4>Gross Sales</h4>
-            <div class="value">₱ {{ formatNumber(grossSales) }}</div>
+            <div class="value">₱{{ formatNumber(grossSales) }}</div>
             <small>From OUT transactions</small>
           </div>
         </div>
@@ -51,7 +51,7 @@
             <div class="value" :class="netProfit >= 0 ? 'profit-positive' : 'profit-negative'">
               ₱{{ formatNumber(netProfit) }}
             </div>
-            <small>Sales - COGS - Expenses</small>
+            <small>Sales - Expenses</small>
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@
                 <i class="fas fa-receipt"></i> Add Expense
               </button>
               <button @click="goToOrderSlip" class="quick-btn order-btn">
-                <i class="fas fa-file-invoice"></i> Create Order Slip
+                <i class="fas fa-file-invoice"></i> Order Slip
               </button>
             </div>
           </div>
@@ -285,17 +285,19 @@ const quickCustomerName = ref('')
 // Low stock threshold in packs
 const LOW_STOCK_THRESHOLD = 20
 
-// ========== BAGONG LOGIC: WALA NANG COGS ==========
+// ========== UPDATED LOGIC ==========
+// Actual current stock (IN - OUT) - ito ang nababawasan
+const actualStock = computed(() => {
+  const totalIn = store.dashboard?.total_in_base || 0
+  const totalOut = store.dashboard?.total_out_base || 0
+  return totalIn - totalOut
+})
+
 // Gross Sales = OUT transactions lang (benta)
 const grossSales = computed(() => {
   return store.movements
     ?.filter(m => m.type === 'OUT')
     .reduce((sum, m) => sum + (Number(m.total_sales) || 0), 0) || 0
-})
-
-// ✅ COGS = 0 (WALA NA! Lahat ng gastos nasa Expenses na)
-const cogs = computed(() => {
-  return 0
 })
 
 // Net Profit = Sales - Expenses (wala nang COGS)
@@ -545,7 +547,7 @@ onMounted(async () => {
     await store.fetchStock()
     await store.fetchItems()
     await store.fetchMovements()
-    console.log('All data loaded! Gross Sales:', grossSales.value, 'Net Profit:', netProfit.value)
+    console.log('All data loaded! Actual Stock:', actualStock.value, 'Gross Sales:', grossSales.value, 'Net Profit:', netProfit.value)
   } catch (error) {
     console.error('Error loading data:', error)
     if (error.response?.status === 401) {

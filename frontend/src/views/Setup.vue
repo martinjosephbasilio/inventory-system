@@ -230,8 +230,8 @@
                 <span><i class="fas fa-tag"></i> Selling Price: ₱{{ formatNumber(form.sell_pack) }}/pack</span>
               </div>
               <div class="preview-row">
-                <span><i class="fas fa-flag"></i> Reorder at: {{ form.reorder_packs || 20 }} packs ({{ (form.reorder_packs || 20) * form.pack_size }} pcs)</span>
-              </div>
+  <span><i class="fas fa-flag"></i> Reorder at: {{ form.reorder_packs }} packs ({{ form.reorder_packs * form.pack_size }} pcs)</span>
+</div>
             </div>
           </div>
         </div>
@@ -270,12 +270,12 @@ const form = ref({
   pack_size: 1,
   type: 'Both',
   sell_pack: 0,
-  reorder_packs: 20,
+  reorder_packs: 10,
   initial_stock_packs: 0
 })
 
 // Low stock threshold in packs (20 packs = low stock)
-const LOW_STOCK_THRESHOLD = 20
+const LOW_STOCK_THRESHOLD = 10
 
 // Get stock data from store.stock
 const getItemStock = (itemId) => {
@@ -286,7 +286,8 @@ const getItemStock = (itemId) => {
 const filteredItems = computed(() => {
   let items = store.items.map(item => {
     const stock = getItemStock(item.id)
-    const reorderInPacks = item.reorder_packs || 20
+    // ✅ Kung walang value, default 10
+    const reorderInPacks = item.reorder_packs || 10
     return {
       ...item,
       current_stock_base: stock.current_stock_base,
@@ -296,6 +297,8 @@ const filteredItems = computed(() => {
       reorder_level: reorderInPacks * (item.pack_size || 1)
     }
   })
+  
+
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -412,7 +415,6 @@ const generateNextId = () => {
   const nextNum = (maxNum + 1).toString().padStart(5, '0')
   return `ITM-${nextNum}`
 }
-
 const openAddModal = () => {
   isEditing.value = false
   form.value = {
@@ -423,7 +425,7 @@ const openAddModal = () => {
     pack_size: 1,
     type: 'Both',
     sell_pack: 0,
-    reorder_packs: 20,
+    reorder_packs: 10,  // ✅ Default para sa bagong item
     initial_stock_packs: 0
   }
   showModal.value = true
@@ -432,12 +434,7 @@ const openAddModal = () => {
 const openEditModal = (item) => {
   isEditing.value = true
   
-  // ✅ Kunin ang reorder_packs mula sa item (kung wala, compute from reorder_level)
-  let reorderPacks = item.reorder_packs
-  if (!reorderPacks && item.reorder_level && item.pack_size) {
-    reorderPacks = item.reorder_level / item.pack_size
-  }
-  reorderPacks = reorderPacks || 20
+  console.log('Editing item:', item.id, 'reorder_packs:', item.reorder_packs)
   
   form.value = {
     id: item.id,
@@ -447,7 +444,7 @@ const openEditModal = (item) => {
     pack_size: item.pack_size,
     type: item.type,
     sell_pack: item.sell_pack,
-    reorder_packs: reorderPacks,  // ← GAMITIN ANG TAMANG VALUE
+    reorder_packs: item.reorder_packs,  // Diretsong gamitin
     initial_stock_packs: 0
   }
   showModal.value = true
@@ -464,9 +461,17 @@ const saveItem = async () => {
     return
   }
   
-  // ✅ Siguraduhing gamitin ang reorder_packs mula sa form
-  const reorderPacks = form.value.reorder_packs || 20
+  // ✅ Para sa ADD: default ay 20, para sa EDIT: gamitin ang value
+  let reorderPacks = form.value.reorder_packs
+  
+  // Kung walang value (sa pag-add ng bagong item), default sa 20
+  if (reorderPacks === undefined || reorderPacks === null || reorderPacks === 0) {
+    reorderPacks = 10
+  }
+  
   const reorder_level = reorderPacks * form.value.pack_size
+  
+  console.log('Saving - isEditing:', isEditing.value, 'reorder_packs:', reorderPacks)
   
   const itemData = {
     id: form.value.id,
@@ -480,6 +485,8 @@ const saveItem = async () => {
   
   if (isEditing.value) {
     await store.updateItem(form.value.id, itemData)
+    await store.fetchItems()
+    await store.fetchStock()
     showToast('Item updated successfully!', 'success')
   } else {
     const exists = store.items.some(i => i.id === form.value.id)
