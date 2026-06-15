@@ -289,16 +289,12 @@ const totalInBase = computed(() => {
 })
 
 // Total OUT (same logic)
+// Total OUT - walang date filter
 const totalOutBase = computed(() => {
-  const cutoffDate = new Date('2026-06-15')
-  
   let total = 0
   for (const m of filteredMovements.value) {
     if (m.type === 'OUT' && m.customer_name !== 'Stock Adjustment') {
-      const movementDate = new Date(m.datetime)
-      if (movementDate >= cutoffDate) {
-        total += Number(m.base_delta) || 0
-      }
+      total += Number(m.base_delta) || 0
     }
   }
   return total
