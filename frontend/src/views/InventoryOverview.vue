@@ -192,9 +192,12 @@
 
 <script setup>
 import { useInventoryStore } from '../stores/inventory'
+import { useAuthStore } from '../stores/auth'  
 import { ref, computed, inject, onMounted } from 'vue'
+import axios from 'axios'
 
 const store = useInventoryStore()
+const authStore = useAuthStore()
 const showToast = inject('showToast')
 const showConfirm = inject('showConfirm')
 
@@ -340,7 +343,7 @@ const saveEditStock = async () => {
     type: action === 'add' ? 'info' : 'warning',
     title: action === 'add' ? 'Add Stock' : 'Remove Stock',
     message: `${action === 'add' ? 'Add' : 'Remove'} ${qty} pack(s) to ${editItem.value.name}?`,
-    confirmText: 'Yes',
+    confirmText: 'Yes, Proceed',
     cancelText: 'Cancel'
   })
   
@@ -349,6 +352,9 @@ const saveEditStock = async () => {
   const now = new Date()
   const datetime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
   
+  const baseDelta = qty * (editItem.value.pack_size || 1)
+  
+  // ✅ Gumawa ng movement para ma-record ang pagbawas
   const movement = {
     datetime: datetime,
     type: action === 'add' ? 'IN' : 'OUT',
@@ -356,8 +362,8 @@ const saveEditStock = async () => {
     item_name: editItem.value.name,
     quantity: qty,
     unit: 'PACK',
-    base_delta: qty * (editItem.value.pack_size || 1),
-    note: editRemark.value || `Stock ${action === 'add' ? 'addition' : 'removal'}`,
+    base_delta: baseDelta,
+    note: editRemark.value || `Manual stock ${action === 'add' ? 'addition' : 'removal'}`,
     sell_price: action === 'remove' ? editItem.value.sell_pack : null,
     total_sales: action === 'remove' ? qty * editItem.value.sell_pack : null,
     customer_name: action === 'remove' ? 'Stock Adjustment' : null
@@ -367,17 +373,20 @@ const saveEditStock = async () => {
     await store.addMovement(movement)
     await store.fetchStock()
     await store.fetchDashboard()
-    if (showToast) showToast(`✅ Stock updated to ${newPacks} packs!`, 'success')
+    
+    showToast(`✅ Stock ${action === 'add' ? 'added' : 'removed'} successfully!`, 'success')
     showEditModal.value = false
+    
+    // ✅ I-reload para makita ang update
+    setTimeout(() => {
+      window.location.reload()
+    }, 500)
+    
   } catch (error) {
-    if (showToast) showToast('Error updating stock', 'error')
+    console.error('Error updating stock:', error)
+    showToast('Error updating stock', 'error')
   }
 }
-
-onMounted(async () => {
-  await store.fetchStock()
-  await store.fetchItems()
-})
 </script>
 
 <style scoped>

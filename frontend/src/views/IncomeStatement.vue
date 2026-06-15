@@ -28,7 +28,7 @@
           <div class="stat-info">
             <h4>Gross Sales</h4>
             <div class="value">₱{{ formatNumber(grossSales) }}</div>
-            <small>Total OUT transactions</small>
+            <small>Total OUT transactions (excluding adjustments)</small>
           </div>
         </div>
         <div class="stat-card">
@@ -129,8 +129,8 @@ const months = [
   { num: 10, name: 'October' }, { num: 11, name: 'November' }, { num: 12, name: 'December' }
 ]
 
-// ========== SIMPLENG LOGIC ==========
-// Sales = OUT transactions lang (benta)
+// ========== FIXED: EXCLUDE STOCK ADJUSTMENT ==========
+// Sales = OUT transactions lang na HINDI Stock Adjustment
 const grossSales = computed(() => {
   let total = 0
   for (let i = 1; i <= 12; i++) {
@@ -206,7 +206,7 @@ const loadIncomeData = async () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     }
     
-    // Get movements - OUT lang ang kunin (Sales)
+    // Get movements - OUT lang ang kunin (Sales), at i-exclude ang Stock Adjustment
     const movementsRes = await axios.get(`${API_URL}/movements`, {
       params: { startDate, endDate }
     })
@@ -214,12 +214,11 @@ const loadIncomeData = async () => {
     for (const movement of movementsRes.data) {
       const month = new Date(movement.datetime).getMonth() + 1
       
-      // OUT lang ang Sales (ignore ang IN)
-      if (movement.type === 'OUT') {
+      // ✅ OUT lang ang Sales, at HINDI Stock Adjustment
+      if (movement.type === 'OUT' && movement.customer_name !== 'Stock Adjustment') {
         const salesAmount = Number(movement.total_sales) || 0
         monthlySales.value[month] = (monthlySales.value[month] || 0) + salesAmount
       }
-      // WALA na ang IN sa COGS
     }
     
     // Get expenses - LAHAT ng gastos dito (kasama raw materials)
@@ -234,9 +233,9 @@ const loadIncomeData = async () => {
       expensesByCategory.value[expense.category] = (expensesByCategory.value[expense.category] || 0) + amount
     }
     
-    console.log('=== SIMPLENG LOGIC ===')
+    console.log('=== INCOME STATEMENT (Excluding Stock Adjustment) ===')
     console.log('Sales (OUT):', monthlySales.value)
-    console.log('Total Expenses (kasama raw materials):', monthlyExpenses.value)
+    console.log('Total Expenses:', monthlyExpenses.value)
     console.log('Net Profit:', netProfit.value)
     
   } catch (error) {

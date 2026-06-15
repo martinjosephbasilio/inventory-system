@@ -258,34 +258,47 @@ const editForm = ref({
 
 const filteredMovements = computed(() => {
   let result = store.movements || []
+  
+  // ✅ I-exclude ang Stock Adjustment sa table display
+  result = result.filter(m => m.customer_name !== 'Stock Adjustment')
+  
   if (filters.value.type && result.length) {
     result = result.filter(m => m.type === filters.value.type)
   }
   return result
 })
 
+
+// Total IN - I-exclude ang mga correction/sobrang IN
 const totalInBase = computed(() => {
-  return filteredMovements.value
-    .filter(m => m.type === 'IN')
-    .reduce((sum, m) => sum + (m.base_delta || 0), 0)
-})
-
-const totalOutBase = computed(() => {
-  return filteredMovements.value
-    .filter(m => m.type === 'OUT')
-    .reduce((sum, m) => sum + (m.base_delta || 0), 0)
-})
-
-const netChange = computed(() => {
-  return totalInBase.value - totalOutBase.value
-})
-
-const totalSales = computed(() => {
+  // ✅ Gamitin ang cutoff date kung kailan naging tama ang stock
+  // I-set ito sa petsa bago ka nag-correct
+  const cutoffDate = new Date('2026-06-15') // Palitan sa tamang petsa
+  
   let total = 0
   for (const m of filteredMovements.value) {
-    if (m.type === 'OUT') {
-      const salesAmount = Number(m.total_sales) || 0
-      total += salesAmount
+    if (m.type === 'IN') {
+      const movementDate = new Date(m.datetime)
+      // ✅ I-exclude ang mga IN bago ang cutoff date
+      if (movementDate >= cutoffDate) {
+        total += Number(m.base_delta) || 0
+      }
+    }
+  }
+  return total
+})
+
+// Total OUT (same logic)
+const totalOutBase = computed(() => {
+  const cutoffDate = new Date('2026-06-15')
+  
+  let total = 0
+  for (const m of filteredMovements.value) {
+    if (m.type === 'OUT' && m.customer_name !== 'Stock Adjustment') {
+      const movementDate = new Date(m.datetime)
+      if (movementDate >= cutoffDate) {
+        total += Number(m.base_delta) || 0
+      }
     }
   }
   return total
@@ -296,7 +309,6 @@ const formatNumber = (num) => {
   return Number(num).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-// FIXED: Safe date formatter with error handling
 const formatDateTime = (datetime) => {
   if (!datetime) return '-'
   try {
@@ -480,18 +492,17 @@ onMounted(() => {
   margin-bottom: 1.5rem;
 }
 
-/* Filter Section */
 .filter-section {
   background: #f4f6f8;
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   border: 1px solid #e2e6ea;
 }
 
 .filter-row {
   display: flex;
-  gap: 1rem;
+  gap: 0.8rem;
   flex-wrap: wrap;
   align-items: flex-end;
 }
@@ -503,7 +514,7 @@ onMounted(() => {
 }
 
 .filter-group label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: bold;
   color: #4a5568;
 }
@@ -514,11 +525,12 @@ onMounted(() => {
 }
 
 .filter-input {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid #cbd5e0;
   border-radius: 6px;
-  min-width: 150px;
+  min-width: 130px;
   background: white;
+  font-size: 0.7rem;
 }
 
 .filter-input:focus {
@@ -527,60 +539,52 @@ onMounted(() => {
   box-shadow: 0 0 0 2px rgba(44,62,80,0.1);
 }
 
-.btn-clear {
-  background: #718096;
+.btn-clear, .btn-refresh {
+  background: #2c3e50;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 0.7rem;
+}
+
+.btn-clear {
+  background: #718096;
 }
 
 .btn-clear:hover {
   background: #4a5568;
 }
 
-.btn-refresh {
-  background: #2c3e50;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .btn-refresh:hover {
   background: #1a252f;
 }
 
-/* Summary Stats */
 .summary-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
 }
 
 .summary-card {
   background: white;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.6rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  border-left: 4px solid #2c3e50;
+  border-left: 3px solid #2c3e50;
 }
 
 .summary-icon {
-  font-size: 1.5rem;
-  width: 40px;
+  font-size: 1.2rem;
+  width: 35px;
   text-align: center;
   color: #2c3e50;
 }
@@ -591,17 +595,17 @@ onMounted(() => {
 }
 
 .summary-info span {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: #718096;
 }
 
 .summary-info strong {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   color: #1a2a3a;
 }
 
 .summary-info strong small {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: normal;
   color: #718096;
 }
@@ -614,21 +618,20 @@ onMounted(() => {
   color: #dc3545;
 }
 
-/* Table */
 .table-responsive {
   overflow-x: auto;
 }
 
 .movements-table {
-  min-width: 1300px;
+  min-width: 1200px;
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
 }
 
 .movements-table th {
   background: #2c3e50;
-  padding: 12px;
+  padding: 8px;
   text-align: left;
   font-weight: 600;
   color: white;
@@ -636,7 +639,7 @@ onMounted(() => {
 }
 
 .movements-table td {
-  padding: 10px;
+  padding: 6px;
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
   color: #2d3748;
@@ -650,9 +653,9 @@ onMounted(() => {
 .badge-in {
   background: #28a745;
   color: white;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: bold;
   display: inline-flex;
   align-items: center;
@@ -662,9 +665,9 @@ onMounted(() => {
 .badge-out {
   background: #e53e3e;
   color: white;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: bold;
   display: inline-flex;
   align-items: center;
@@ -673,9 +676,9 @@ onMounted(() => {
 
 code {
   background: #edf2f7;
-  padding: 2px 6px;
+  padding: 2px 5px;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-family: monospace;
   color: #2d3748;
 }
@@ -686,21 +689,20 @@ code {
 
 .empty-row {
   text-align: center;
-  padding: 40px;
+  padding: 20px;
   color: #a0aec0;
 }
 
 .empty-row i {
-  font-size: 2rem;
+  font-size: 1.5rem;
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: #cbd5e0;
 }
 
-/* Action Buttons */
 .action-cell {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   justify-content: center;
 }
 
@@ -708,10 +710,10 @@ code {
   background: #17a2b8;
   color: white;
   border: none;
-  padding: 5px 8px;
+  padding: 4px 6px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 }
 
 .btn-edit:hover {
@@ -722,17 +724,16 @@ code {
   background: #dc3545;
   color: white;
   border: none;
-  padding: 5px 8px;
+  padding: 4px 6px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 }
 
 .btn-delete:hover {
   background: #bb2d3b;
 }
 
-/* Modal */
 .modal {
   position: fixed;
   top: 0;
@@ -749,7 +750,7 @@ code {
 .modal-content {
   background: white;
   border-radius: 12px;
-  width: 550px;
+  width: 500px;
   max-width: 95%;
   max-height: 90vh;
   overflow-y: auto;
@@ -759,7 +760,7 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0.8rem 1.2rem;
   border-bottom: 1px solid #e2e8f0;
   background: #2c3e50;
   color: white;
@@ -779,40 +780,41 @@ code {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem;
+  padding: 0.8rem 1.2rem;
   border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   font-weight: bold;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   color: #4a5568;
 }
 
 .form-group label i {
-  margin-right: 6px;
+  margin-right: 4px;
   color: #2c3e50;
 }
 
 .form-input {
   width: 100%;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid #cbd5e0;
   border-radius: 4px;
   background: white;
+  font-size: 0.7rem;
 }
 
 .form-input:focus {
@@ -824,56 +826,57 @@ code {
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .selected-item-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #edf2f7;
-  padding: 10px;
+  padding: 8px;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .selected-item-info i {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #2c3e50;
 }
 
 .selected-item-info .item-code {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: #718096;
   display: block;
 }
 
 .preview {
   background: #f0f2f5;
-  padding: 1rem;
+  padding: 0.8rem;
   border-radius: 8px;
-  margin-top: 1rem;
+  margin-top: 0.8rem;
 }
 
 .preview strong i {
-  margin-right: 6px;
+  margin-right: 4px;
 }
 
 .preview p {
-  margin: 8px 0 0 0;
-  font-size: 0.85rem;
+  margin: 6px 0 0 0;
+  font-size: 0.7rem;
 }
 
 .btn-cancel {
   background: #718096;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  font-size: 0.7rem;
 }
 
 .btn-cancel:hover {
@@ -884,79 +887,16 @@ code {
   background: #2c3e50;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  font-size: 0.7rem;
 }
 
 .btn-save:hover {
   background: #1a252f;
-}
-/* PAMPALIIT LANG NG TABLE ROWS - IDAGDAG LANG SA DULO */
-
-.movements-table th {
-  padding: 0.4rem 0.3rem !important;
-  font-size: 0.65rem !important;
-}
-
-.movements-table td {
-  padding: 0.3rem 0.25rem !important;
-  font-size: 0.65rem !important;
-}
-
-.badge-in, .badge-out {
-  padding: 2px 6px !important;
-  font-size: 0.6rem !important;
-}
-
-.btn-edit, .btn-delete {
-  padding: 3px 6px !important;
-  font-size: 0.55rem !important;
-}
-
-.filter-section {
-  padding: 0.8rem !important;
-}
-
-.filter-input {
-  padding: 4px 8px !important;
-  font-size: 0.65rem !important;
-}
-
-.filter-group label {
-  font-size: 0.6rem !important;
-}
-
-.summary-card {
-  padding: 0.4rem 0.6rem !important;
-}
-
-.summary-info strong {
-  font-size: 0.85rem !important;
-}
-
-.summary-info span {
-  font-size: 0.55rem !important;
-}
-
-.summary-icon {
-  font-size: 1rem !important;
-  width: 30px !important;
-}
-
-.card {
-  padding: 0.8rem !important;
-}
-
-.header-actions h3 {
-  font-size: 0.95rem !important;
-}
-
-.header-actions p {
-  font-size: 0.65rem !important;
-  margin-bottom: 0.8rem !important;
 }
 </style>

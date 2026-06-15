@@ -334,7 +334,6 @@ watch(selectedDate, () => {
   loadOrdersForDate()
 })
 
-// ✅ FIXED: Update and save order with proper data types
 const updateAndSaveOrder = async (order) => {
   const quantity = Number(order.quantity)
   const unitPrice = Number(order.unitPrice)
@@ -377,7 +376,6 @@ const openEditModal = (order) => {
   showEditModal.value = true
 }
 
-// ✅ FIXED: Save edit order with proper data types
 const saveEditOrder = async () => {
   if (!editOrderData.value) return
   
@@ -513,19 +511,25 @@ const deleteAllOrdersForDate = async () => {
   }
 }
 
+// ✅ UPDATED: Exclude Stock Adjustment transactions
 const loadOrdersForDate = async () => {
   try {
     const response = await axios.get(`${API_URL}/movements`, {
       params: { startDate: selectedDate.value, endDate: selectedDate.value, type: 'OUT' }
     })
     
-    existingOrdersCount.value = response.data.length
-    hasExistingOrders.value = response.data.length > 0
+    // ✅ FILTER: I-exclude ang mga may customer_name na "Stock Adjustment"
+    const filteredOrders = response.data.filter(order => 
+      order.customer_name !== 'Stock Adjustment'
+    )
+    
+    existingOrdersCount.value = filteredOrders.length
+    hasExistingOrders.value = filteredOrders.length > 0
     
     orderItems.value = []
     selectedOrderKeys.value = []
     
-    for (const order of response.data) {
+    for (const order of filteredOrders) {
       const item = store.stock.find(i => i.id === order.item_id)
       
       let timeDisplay = ''

@@ -21,7 +21,7 @@
           <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
           <div class="stat-info">
             <h4>Total Sales (OUT)</h4>
-            <div class="value">{{ store.dashboard.total_out_base }} <span class="unit">units</span></div>
+            <div class="value">{{ totalSalesOut }} <span class="unit">units</span></div>
             <small>Year to date</small>
           </div>
         </div>
@@ -285,22 +285,61 @@ const quickCustomerName = ref('')
 // Low stock threshold in packs
 const LOW_STOCK_THRESHOLD = 20
 
-// ========== UPDATED LOGIC ==========
-// Actual current stock (IN - OUT) - ito ang nababawasan
+// ========== UPDATED COMPUTED PROPERTIES ==========
+
+// Total Inventory IN (all IN movements, excluding Stock Adjustment)
+// Total Inventory IN (all IN movements, excluding old/corrected ones)
+const totalInventoryIn = computed(() => {
+  if (!store.movements || store.movements.length === 0) return 0
+  
+  // ✅ I-set ang cutoff date kung kailan mo ginawa ang correction
+  const cutoffDate = new Date('2026-06-15') // Halimbawa: June 15, 2026
+  
+  let total = 0
+  for (const m of store.movements) {
+    if (m.type === 'IN' && m.customer_name !== 'Stock Adjustment') {
+      // ✅ I-exclude ang mga IN bago ang cutoff date
+      const movementDate = new Date(m.datetime)
+      if (movementDate >= cutoffDate) {
+        total += Number(m.base_delta) || 0
+      }
+    }
+  }
+  return total
+})
+
+// Total Sales (OUT) units - HINDI kasama ang Stock Adjustment
+const totalSalesOut = computed(() => {
+  if (!store.movements || store.movements.length === 0) return 0
+  
+  let total = 0
+  for (const m of store.movements) {
+    if (m.type === 'OUT' && m.customer_name !== 'Stock Adjustment') {
+      total += Number(m.base_delta) || 0
+    }
+  }
+  return total
+})
+
+// Actual Stock = Total IN - Total OUT
 const actualStock = computed(() => {
-  const totalIn = store.dashboard?.total_in_base || 0
-  const totalOut = store.dashboard?.total_out_base || 0
-  return totalIn - totalOut
+  return totalInventoryIn.value - totalSalesOut.value
 })
 
-// Gross Sales = OUT transactions lang (benta)
+// Gross Sales (₱) - HINDI kasama ang Stock Adjustment
 const grossSales = computed(() => {
-  return store.movements
-    ?.filter(m => m.type === 'OUT')
-    .reduce((sum, m) => sum + (Number(m.total_sales) || 0), 0) || 0
+  if (!store.movements || store.movements.length === 0) return 0
+  
+  let total = 0
+  for (const m of store.movements) {
+    if (m.type === 'OUT' && m.customer_name !== 'Stock Adjustment') {
+      total += Number(m.total_sales) || 0
+    }
+  }
+  return total
 })
 
-// Net Profit = Sales - Expenses (wala nang COGS)
+// Net Profit = Sales - Expenses
 const netProfit = computed(() => {
   const sales = grossSales.value
   const expenses = Number(store.dashboard?.total_expenses) || 0
@@ -547,7 +586,12 @@ onMounted(async () => {
     await store.fetchStock()
     await store.fetchItems()
     await store.fetchMovements()
-    console.log('All data loaded! Actual Stock:', actualStock.value, 'Gross Sales:', grossSales.value, 'Net Profit:', netProfit.value)
+    
+    console.log('Dashboard - Movements count:', store.movements?.length)
+    console.log('Dashboard - Total IN:', totalInventoryIn.value)
+    console.log('Dashboard - Total OUT:', totalSalesOut.value)
+    console.log('Dashboard - Actual Stock:', actualStock.value)
+    
   } catch (error) {
     console.error('Error loading data:', error)
     if (error.response?.status === 401) {
