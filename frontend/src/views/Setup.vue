@@ -1007,20 +1007,26 @@ onMounted(async () => {
 
 .currency-input {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .currency {
   position: absolute;
-  left: 10px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6c757d;
+  color: #1a2a3a;
+  font-weight: 700;
+  font-size: 0.9rem;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .currency-input .form-control {
-  padding-left: 28px;
+  padding-left: 32px !important;
+  font-weight: 600;
 }
-
 .price-section {
   background: #f8f9fa;
   padding: 1rem;
