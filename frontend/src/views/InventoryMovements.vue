@@ -259,17 +259,33 @@ const editForm = ref({
 const filteredMovements = computed(() => {
   let result = store.movements || []
   
+  // ✅ I-exclude ang raw materials based sa category ng items
   result = result.filter(m => {
-    if (m.type === 'RECEIVED' || m.type === 'USED' || m.type === 'WASTE') {
+    // Hanapin ang item sa store.items
+    const item = store.items.find(i => i.id === m.item_id)
+    
+    // I-exclude kung ang category ay raw materials
+    if (item && (item.category === 'Raw Materials' || item.category === 'Rolls' || item.category === 'Ink' || item.category === 'Chemicals' || item.category === 'Supplies')) {
       return false
     }
+    
+    // I-exclude ang MAT- prefix
     if (m.item_id && m.item_id.startsWith('MAT-')) {
       return false
     }
+    
+    // I-exclude ang RECEIVED, USED, WASTE types
+    if (m.type === 'RECEIVED' || m.type === 'USED' || m.type === 'WASTE') {
+      return false
+    }
+    
+    // I-exclude ang Stock Adjustment
+    if (m.customer_name === 'Stock Adjustment') {
+      return false
+    }
+    
     return true
   })
-  
-  result = result.filter(m => m.customer_name !== 'Stock Adjustment')
   
   if (filters.value.type && result.length) {
     result = result.filter(m => m.type === filters.value.type)

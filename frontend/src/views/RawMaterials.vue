@@ -258,7 +258,24 @@ const summaryStats = computed(() => {
 const filteredItems = computed(() => {
   let result = materials.value
   
-  // Search filter
+  // ✅ I-filter: Raw Materials lang dapat (RECEIVED, USED, WASTE)
+  // At dapat may MAT- prefix ang item_id
+  result = result.filter(m => {
+    // I-check kung ang type ay raw materials
+    const isRawMaterialType = m.type === 'RECEIVED' || m.type === 'USED' || m.type === 'WASTE'
+    // I-check kung ang item_id ay nagsisimula sa MAT-
+    const hasMatPrefix = m.item_id && m.item_id.startsWith('MAT-')
+    
+    // O kaya i-check kung ang item_name ay nasa listahan ng raw materials
+    const rawMaterialNames = ['Roll', 'Rolls', 'Ink', 'Chemicals', 'Supplies']
+    const isRawMaterialName = rawMaterialNames.some(name => 
+      m.item_name && m.item_name.toLowerCase().includes(name.toLowerCase())
+    )
+    
+    return isRawMaterialType || hasMatPrefix || isRawMaterialName
+  })
+  
+  // Apply search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(m => {
@@ -268,7 +285,7 @@ const filteredItems = computed(() => {
     })
   }
   
-  // Category filter
+  // Apply category filter
   if (filters.value.category) {
     result = result.filter(m => {
       const cat = m.material_category || getCategoryFromNote(m.note)
@@ -276,7 +293,7 @@ const filteredItems = computed(() => {
     })
   }
   
-  // Action filter
+  // Apply action filter
   if (filters.value.action) {
     result = result.filter(m => (m.action_type || m.type) === filters.value.action)
   }
