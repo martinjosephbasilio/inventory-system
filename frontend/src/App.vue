@@ -3,7 +3,7 @@
     <!-- SIDEBAR - only show when logged in -->
     <aside class="sidebar" v-if="isLoggedIn">
       <div class="logo-container">
-        <h2 class="logo"><i class="fas fa-box"></i>INRandDGM</h2>
+        <h2 class="logo"><i class="fas fa-box"></i>INR</h2>
         <p class="logo-sub"><i class="fas fa-industry"></i> Packaging Corp</p>
       </div>
       
@@ -37,6 +37,10 @@
           <span class="nav-icon"><i class="fas fa-chart-simple"></i></span>
           <span>Income Statement</span>
         </router-link>
+        <router-link to="/raw-materials" class="nav-item">
+  <span class="nav-icon"><i class="fas fa-industry"></i></span>
+  <span>Raw Materials</span>
+</router-link>
         
         <router-link to="/setup" class="nav-item">
           <span class="nav-icon"><i class="fas fa-sliders-h"></i></span>
@@ -65,6 +69,7 @@
           <router-link to="/profile" class="user-dropdown-item" @click="closeUserDropdown">
             <i class="fas fa-user-circle"></i> My Profile
           </router-link>
+          
           <div class="user-dropdown-divider"></div>
           <a href="#" class="user-dropdown-item" @click.prevent="logout">
             <i class="fas fa-sign-out-alt"></i> Logout

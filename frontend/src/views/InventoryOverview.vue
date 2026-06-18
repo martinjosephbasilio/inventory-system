@@ -3,7 +3,7 @@
     <div class="card">
       <div class="header-section">
         <div class="header-left">
-          <h3><i class="fas fa-boxes"></i> Stock Inventory</h3>
+          <h3><i class="fas fa-boxes"></i> <strong>Stock Inventory</strong></h3>
           <p>Manage your packaging materials stock</p>
         </div>
         <button class="refresh-btn" @click="refreshData">
@@ -15,13 +15,13 @@
         <table class="inventory-table">
           <thead>
             <tr>
-              <th><i class="fas fa-box"></i> ITEM</th>
-              <th><i class="fas fa-cubes"></i> UNIT</th>
-              <th><i class="fas fa-tag"></i> TYPE</th>
-              <th><i class="fas fa-dollar-sign"></i> COST PRICE</th>
-              <th><i class="fas fa-chart-line"></i> SELLING PRICE</th>
-              <th><i class="fas fa-archive"></i> ON HAND</th>
-              <th><i class="fas fa-bolt"></i> ACTIONS</th>
+              <th><i class="fas fa-box"></i> <strong>ITEM</strong></th>
+              <th><i class="fas fa-cubes"></i> <strong>UNIT</strong></th>
+              <th><i class="fas fa-tag"></i> <strong>TYPE</strong></th>
+              <th><i class="fas fa-dollar-sign"></i> <strong>COST PRICE</strong></th>
+              <th><i class="fas fa-chart-line"></i> <strong>SELLING PRICE</strong></th>
+              <th><i class="fas fa-archive"></i> <strong>ON HAND</strong></th>
+              <th><i class="fas fa-bolt"></i> <strong>ACTIONS</strong></th>
             </tr>
           </thead>
           <tbody>
@@ -30,49 +30,49 @@
                 <strong>{{ item.name }}</strong><br>
                 <span class="item-code">{{ item.id }}</span>
               </td>
-              <td class="center">{{ item.pack_size }} <i class="fas fa-cube"></i> pcs/pack</td>
+              <td class="center"><strong>{{ item.pack_size }}</strong> <i class="fas fa-cube"></i> pcs/pack</td>
               <td>
                 <span :class="['type-badge', getTypeClass(item.type)]">
-                  <i :class="getTypeIcon(item.type)"></i> {{ item.type }}
+                  <i :class="getTypeIcon(item.type)"></i> <strong>{{ item.type }}</strong>
                 </span>
-                </td>
+              </td>
               <td class="price-cell">
-                <span class="price">₱{{ formatNumber(item.cost_pack) }}</span>
+                <span class="price"><i class="fas fa-peso-sign"></i> <strong>{{ formatNumber(item.cost_pack) }}</strong></span>
                 <span class="price-unit">(Pack)</span><br>
-                <small>₱{{ formatNumber(item.cost_base) }} (Base)</small>
-                </td>
+                <small><i class="fas fa-peso-sign"></i> {{ formatNumber(item.cost_base) }} (Base)</small>
+              </td>
               <td class="price-cell">
-                <span class="price">₱{{ formatNumber(item.sell_pack) }}</span>
+                <span class="price"><i class="fas fa-peso-sign"></i> <strong>{{ formatNumber(item.sell_pack) }}</strong></span>
                 <span class="price-unit">(Pack)</span><br>
-                <small>₱{{ formatNumber(item.sell_base) }} (Base)</small>
-                </td>
+                <small><i class="fas fa-peso-sign"></i> {{ formatNumber(item.sell_base) }} (Base)</small>
+              </td>
               <td class="stock-cell">
                 <div class="stock-display">
-                  <i class="fas fa-box"></i> {{ item.boxes }} Packs +
-                  <i class="fas fa-cube"></i> {{ item.pcs }} Pcs
+                  <i class="fas fa-box"></i> <strong>{{ item.boxes }}</strong> Packs +
+                  <i class="fas fa-cube"></i> <strong>{{ item.pcs }}</strong> Pcs
                 </div>
                 <small class="base-info">
-                  <i class="fas fa-database"></i> Base: {{ item.current_stock_base }} pcs
+                  <i class="fas fa-database"></i> Base: <strong>{{ item.current_stock_base }}</strong> pcs
                 </small>
                 <div v-if="item.current_stock_base <= item.reorder_level && item.current_stock_base > 0"
                   class="low-stock-badge">
-                  <i class="fas fa-exclamation-triangle"></i> Low Stock
+                  <i class="fas fa-exclamation-triangle"></i> <strong>Low Stock</strong>
                 </div>
                 <div v-if="item.current_stock_base === 0" class="out-stock-badge">
-                  <i class="fas fa-times-circle"></i> Out of Stock
+                  <i class="fas fa-times-circle"></i> <strong>Out of Stock</strong>
                 </div>
-                </td>
+              </td>
               <td class="actions-cell">
                 <button class="btn-in" @click="openInOut(item, 'IN')">
-                  <i class="fas fa-arrow-down"></i> IN
+                  <i class="fas fa-arrow-down"></i> <strong>IN</strong>
                 </button>
                 <button class="btn-out" @click="openInOut(item, 'OUT')">
-                  OUT <i class="fas fa-arrow-up"></i>
+                  <strong>OUT</strong> <i class="fas fa-arrow-up"></i>
                 </button>
                 <button class="btn-edit" @click="openEditStock(item)" title="Edit Stock">
-                  <i class="fas fa-edit"></i> Edit
+                  <i class="fas fa-edit"></i> <strong>Edit</strong>
                 </button>
-                </td>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -85,7 +85,7 @@
         <div class="modal-header">
           <h3>
             <i :class="modalType === 'IN' ? 'fas fa-arrow-down' : 'fas fa-arrow-up'"></i>
-            {{ modalType === 'IN' ? 'ADD STOCK IN' : 'REMOVE STOCK OUT' }}
+            <strong>{{ modalType === 'IN' ? 'ADD STOCK IN' : 'REMOVE STOCK OUT' }}</strong>
           </h3>
           <button class="close-btn" @click="showModal = false">
             <i class="fas fa-times"></i>
@@ -102,24 +102,24 @@
           </div>
 
           <div class="form-group">
-            <label><i class="fas fa-sort-amount-up"></i> Quantity (in Packs):</label>
+            <label><strong><i class="fas fa-sort-amount-up"></i> Quantity (in Packs)</strong></label>
             <input type="number" v-model.number="quantity" min="1" class="form-input" />
             <small>1 Pack = {{ selectedItem?.pack_size || 0 }} pieces</small>
           </div>
 
           <div class="form-group">
-            <label><i class="fas fa-cubes"></i> Unit:</label>
+            <label><strong><i class="fas fa-cubes"></i> Unit</strong></label>
             <input type="text" :value="`Pack (${selectedItem?.pack_size || 0} pcs/pack)`" disabled class="form-input" />
           </div>
 
           <div v-if="modalType === 'OUT'" class="form-group">
-            <label><i class="fas fa-tag"></i> Selling Price (per Pack):</label>
+            <label><strong><i class="fas fa-tag"></i> Selling Price (per Pack)</strong></label>
             <input type="number" step="0.01" v-model.number="sellPrice" class="form-input" />
             <small>Default: ₱{{ formatNumber(selectedItem?.sell_pack) }} per pack</small>
           </div>
 
           <div class="form-group">
-            <label><i class="fas fa-pen"></i> Note (optional):</label>
+            <label><strong><i class="fas fa-pen"></i> Note (optional)</strong></label>
             <input v-model="note" placeholder="e.g., Received from supplier, Sold to customer" class="form-input" />
           </div>
 
@@ -147,7 +147,7 @@
             <i class="fas fa-times"></i> Cancel
           </button>
           <button class="btn-save" @click="saveMovement">
-            <i class="fas fa-check"></i> Confirm
+            <i class="fas fa-check"></i> <strong>Confirm</strong>
           </button>
         </div>
       </div>
@@ -157,7 +157,7 @@
     <div v-if="showEditModal" class="modal" @click.self="showEditModal = false">
       <div class="modal-content edit-modal">
         <div class="modal-header">
-          <h3><i class="fas fa-edit"></i> Edit Stock: {{ editItem?.name }}</h3>
+          <h3><i class="fas fa-edit"></i> <strong>Edit Stock: {{ editItem?.name }}</strong></h3>
           <button class="close-btn" @click="showEditModal = false">✕</button>
         </div>
         <div class="modal-body">
@@ -166,11 +166,11 @@
             <p><strong>Pack Size:</strong> {{ editItem?.pack_size }} pcs/pack</p>
           </div>
           <div class="form-group">
-            <label>New Stock (in packs):</label>
+            <label><strong>New Stock (in packs)</strong></label>
             <input type="number" v-model.number="newStockPacks" class="form-input" />
           </div>
           <div class="form-group">
-            <label>Remarks:</label>
+            <label><strong>Remarks</strong></label>
             <input v-model="editRemark" placeholder="e.g., Stock adjustment" class="form-input" />
           </div>
           <div class="preview" v-if="newStockPacks !== editItem?.boxes">
@@ -183,7 +183,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn-cancel" @click="showEditModal = false">Cancel</button>
-          <button class="btn-save" @click="saveEditStock">Save</button>
+          <button class="btn-save" @click="saveEditStock"><strong>Save</strong></button>
         </div>
       </div>
     </div>
@@ -387,6 +387,11 @@ const saveEditStock = async () => {
     showToast('Error updating stock', 'error')
   }
 }
+
+onMounted(async () => {
+  await store.fetchStock()
+  await store.fetchItems()
+})
 </script>
 
 <style scoped>

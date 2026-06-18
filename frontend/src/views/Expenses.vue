@@ -6,48 +6,90 @@
           <h3><i class="fas fa-coins"></i> Expenses Tracker</h3>
           <p><i class="fas fa-chart-line"></i> Track all business expenses and operating costs</p>
         </div>
-        <button class="btn-add" @click="showAddModal = true">
+        <button class="btn-add" @click="openAddModal">
           <i class="fas fa-plus-circle"></i> Add New Expense
         </button>
+      </div>
+      
+      <!-- Summary Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div class="stat-info">
+            <h4>This Month</h4>
+            <div class="value">₱{{ formatNumber(monthlyTotal) }}</div>
+            <small>{{ currentMonth }} {{ currentYear }}</small>
+          </div>
+        </div>
+         <div class="stat-card">
+    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+
+    <div class="stat-info">
+      <h4>Year to Date</h4>
+      <div class="value">₱{{ formatNumber(yearTotal) }}</div>
+      <small>{{ currentYear }}</small>
+    </div>
+  </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-tags"></i></div>
+          <div class="stat-info">
+            <h4>Categories Used</h4>
+            <div class="value">{{ categoriesCount }}</div>
+            <small>Active expense categories</small>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-list"></i></div>
+          <div class="stat-info">
+            <h4>Total Records</h4>
+            <div class="value">{{ store.expenses.length }}</div>
+            <small>All time expenses</small>
+          </div>
+        </div>
       </div>
       
       <!-- Filters -->
       <div class="filter-section">
         <div class="filter-row">
           <div class="filter-group">
-            <label><i class="fas fa-calendar-alt"></i> From:</label>
-            <input type="date" v-model="filters.startDate" @change="loadExpenses" class="filter-input" />
+            <label><i class="fas fa-calendar-alt"></i> Start Date:</label>
+            <div class="input-icon-wrapper">
+              <i class="fas fa-calendar-day input-icon"></i>
+              <input type="date" v-model="filters.startDate" @change="loadExpenses" class="filter-input with-icon" />
+            </div>
+            <small>Filter from this date</small>
           </div>
           <div class="filter-group">
-            <label><i class="fas fa-calendar-alt"></i> To:</label>
-            <input type="date" v-model="filters.endDate" @change="loadExpenses" class="filter-input" />
+            <label><i class="fas fa-calendar-alt"></i> End Date:</label>
+            <div class="input-icon-wrapper">
+              <i class="fas fa-calendar-day input-icon"></i>
+              <input type="date" v-model="filters.endDate" @change="loadExpenses" class="filter-input with-icon" />
+            </div>
+            <small>Filter up to this date</small>
           </div>
           <div class="filter-group">
-            <label><i class="fas fa-folder"></i> Category:</label>
-            <select v-model="filters.category" @change="loadExpenses" class="filter-input">
-              <option value="">All Categories</option>
-              
-              <option value="Utilities">Utilities</option>
-              <option value="Salary">Salary</option>
-              <option value="Supplies">Supplies</option>
-              <option value="Transport">Transport</option>
-              <option value="Others">Others</option>
-            </select>
+            <label><i class="fas fa-tag"></i> Category:</label>
+            <div class="input-icon-wrapper">
+              <i class="fas fa-list input-icon"></i>
+              <select v-model="filters.category" @change="loadExpenses" class="filter-input with-icon">
+                <option value="">All Categories</option>
+                <option value="Raw Materials">Raw Materials</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Rent">Rent</option>
+                <option value="Salary">Salary / Wages</option>
+                <option value="Transport">Transport</option>
+                <option value="Supplies">Supplies</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+            <small>Filter by expense category</small>
           </div>
           <button @click="clearFilters" class="btn-clear">
-            <i class="fas fa-eraser"></i> Clear
+            <i class="fas fa-eraser"></i> Clear All Filters
           </button>
         </div>
-      </div>
-      
-      <!-- Total Card -->
-      <div class="total-card">
-        <div class="total-icon">
-          <i class="fas fa-peso-sign"></i>
-        </div>
-        <div class="total-info">
-          <span>Total Expenses</span>
-          <strong>₱{{ formatNumber(totalExpenses) }}</strong>
+        <div class="filter-results" v-if="filteredExpenses.length !== store.expenses.length">
+          <i class="fas fa-filter"></i> Showing <strong>{{ filteredExpenses.length }}</strong> of <strong>{{ store.expenses.length }}</strong> expenses
         </div>
       </div>
       
@@ -56,20 +98,20 @@
         <table class="expenses-table">
           <thead>
             <tr>
-              <th>DATE</th>
-              <th>DESCRIPTION</th>
-              <th>CATEGORY</th>
-              <th>AMOUNT</th>
-              <th>NOTES</th>
-              <th>ACTIONS</th>
+              <th><i class="fas fa-calendar-day"></i> DATE</th>
+              <th><i class="fas fa-align-left"></i> DESCRIPTION</th>
+              <th><i class="fas fa-tag"></i> CATEGORY</th>
+              <th><i class="fas fa-peso-sign"></i> AMOUNT</th>
+              <th><i class="fas fa-sticky-note"></i> NOTES</th>
+              <th><i class="fas fa-cog"></i> ACTIONS</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="expense in store.expenses" :key="expense.id">
-              <td>
-                <i class="far fa-calendar-alt"></i> {{ expense.date }}
+            <tr v-for="expense in filteredExpenses" :key="expense.id">
+              <td class="date-cell">
+                <i class="far fa-calendar-alt"></i> {{ formatDate(expense.date) }}
               </td>
-              <td><strong>{{ expense.description }}</strong></td>
+              <td class="desc-cell"><strong>{{ expense.description }}</strong></td>
               <td>
                 <span :class="['category-badge', getCategoryClass(expense.category)]">
                   <i :class="getCategoryIcon(expense.category)"></i> {{ expense.category }}
@@ -78,7 +120,7 @@
               <td class="amount-cell">
                 <i class="fas fa-peso-sign"></i> {{ formatNumber(Number(expense.amount)) }}
               </td>
-              <td>
+              <td class="note-cell">
                 <span v-if="expense.note" class="note-text">
                   <i class="fas fa-comment"></i> {{ expense.note }}
                 </span>
@@ -86,59 +128,104 @@
               </td>
               <td class="action-cell">
                 <button @click="openEditModal(expense)" class="btn-edit" title="Edit Expense">
-                  <i class="fas fa-edit"></i>
+                  <i class="fas fa-edit"></i> Edit
                 </button>
                 <button @click="deleteExpense(expense.id)" class="btn-delete" title="Delete Expense">
-                  <i class="fas fa-trash-alt"></i>
+                  <i class="fas fa-trash-alt"></i> Delete
                 </button>
               </td>
             </tr>
-            <tr v-if="store.expenses.length === 0">
+            <tr v-if="filteredExpenses.length === 0">
               <td colspan="6" class="empty-row">
                 <i class="fas fa-receipt"></i> No expenses recorded
+                <p>Click "Add New Expense" to get started</p>
               </td>
             </tr>
           </tbody>
+          <tfoot v-if="filteredExpenses.length > 0">
+            <tr class="total-row">
+              <td colspan="3" class="total-label"><strong>GRAND TOTAL</strong></td>
+              <td colspan="3" class="total-amount"><i class="fas fa-peso-sign"></i> {{ formatNumber(filteredTotal) }}</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
     
     <!-- Add Expense Modal -->
     <div v-if="showAddModal" class="modal" @click.self="showAddModal = false">
-      <div class="modal-content">
+      <div class="modal-content expense-modal">
         <div class="modal-header">
-          <h3><i class="fas fa-plus-circle"></i> Add New Expense</h3>
+          <div class="header-icon">
+            <i class="fas fa-plus-circle"></i>
+          </div>
+          <h3>Add New Expense</h3>
           <button class="close-btn" @click="showAddModal = false">
             <i class="fas fa-times"></i>
           </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label><i class="fas fa-calendar-alt"></i> Date:</label>
+            <label><i class="fas fa-calendar-alt"></i> Date <span class="required">*</span></label>
             <input type="date" v-model="expenseForm.date" class="form-input" />
+            <small>Select the date when this expense was incurred</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-align-left"></i> Description:</label>
+            <label><i class="fas fa-pencil-alt"></i> Description <span class="required">*</span></label>
             <input type="text" v-model="expenseForm.description" placeholder="e.g., Office supplies, Electricity bill" class="form-input" />
+            <small>Brief description of the expense</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-folder"></i> Category:</label>
+            <label><i class="fas fa-tag"></i> Category <span class="required">*</span></label>
             <select v-model="expenseForm.category" class="form-input">
-              
-              <option value="Utilities">Utilities (Electricity, Water, Internet)</option>
-              <option value="Salary">Employee Salary</option>
-              <option value="Supplies">Packaging Supplies</option>
-              <option value="Transport">Transport / Delivery</option>
-              <option value="Others">Others</option>
-            </select>
+  <option value="Raw Materials">Raw Materials</option>
+  <option value="Utilities">Utilities</option>
+  <option value="Rent">Rent</option>
+  <option value="Salary">Salary / Wages</option>
+  <option value="Transport">Transport</option>
+  <option value="Supplies">Supplies</option>
+  <option value="Others">Others</option>
+</select>
+            <small>Select the appropriate category for this expense</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-peso-sign"></i> Amount (₱):</label>
-            <input type="number" step="0.01" v-model="expenseForm.amount" class="form-input" placeholder="0.00" />
+            <label><i class="fas fa-money-bill-wave"></i> Amount (₱) <span class="required">*</span></label>
+            <div class="currency-input">
+              <span class="currency"><i class="fas fa-peso-sign"></i></span>
+              <input type="number" step="0.01" v-model="expenseForm.amount" class="form-input" placeholder="0.00" />
+            </div>
+            <small>Enter the amount in Philippine Peso (₱)</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-pen"></i> Additional Notes:</label>
-            <input type="text" v-model="expenseForm.note" placeholder="Optional details" class="form-input" />
+            <label><i class="fas fa-sticky-note"></i> Additional Notes</label>
+            <input type="text" v-model="expenseForm.note" placeholder="Optional - e.g., Receipt #12345, Payment reference" class="form-input" />
+            <small>Optional: Add additional details or reference numbers</small>
+          </div>
+
+          <div class="preview" v-if="expenseForm.amount > 0">
+            <strong><i class="fas fa-eye"></i> Summary Preview</strong>
+            <div class="preview-details">
+              <div class="preview-row">
+                <span><i class="fas fa-calendar-alt"></i> Date:</span>
+                <span class="preview-value">{{ expenseForm.date || 'Not set' }}</span>
+              </div>
+              <div class="preview-row">
+                <span><i class="fas fa-tag"></i> Category:</span>
+                <span class="preview-value">{{ expenseForm.category || 'Not set' }}</span>
+              </div>
+              <div class="preview-row">
+                <span><i class="fas fa-pencil-alt"></i> Description:</span>
+                <span class="preview-value">{{ expenseForm.description || 'Not set' }}</span>
+              </div>
+              <div class="preview-row total">
+                <span><i class="fas fa-money-bill-wave"></i> Total Amount:</span>
+                <span class="preview-amount"><i class="fas fa-peso-sign"></i> {{ formatNumber(expenseForm.amount) }}</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -154,40 +241,78 @@
     
     <!-- Edit Expense Modal -->
     <div v-if="showEditModal" class="modal" @click.self="showEditModal = false">
-      <div class="modal-content">
+      <div class="modal-content expense-modal">
         <div class="modal-header">
-          <h3><i class="fas fa-edit"></i> Edit Expense</h3>
+          <div class="header-icon">
+            <i class="fas fa-edit"></i>
+          </div>
+          <h3>Edit Expense</h3>
           <button class="close-btn" @click="showEditModal = false">
             <i class="fas fa-times"></i>
           </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label><i class="fas fa-calendar-alt"></i> Date:</label>
+            <label><i class="fas fa-calendar-alt"></i> Date <span class="required">*</span></label>
             <input type="date" v-model="editForm.date" class="form-input" />
+            <small>Select the date when this expense was incurred</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-align-left"></i> Description:</label>
+            <label><i class="fas fa-pencil-alt"></i> Description <span class="required">*</span></label>
             <input type="text" v-model="editForm.description" placeholder="e.g., Office supplies, Electricity bill" class="form-input" />
+            <small>Brief description of the expense</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-folder"></i> Category:</label>
+            <label><i class="fas fa-tag"></i> Category <span class="required">*</span></label>
             <select v-model="editForm.category" class="form-input">
-              
-              <option value="Utilities">Utilities (Electricity, Water, Internet)</option>
-              <option value="Salary">Employee Salary</option>
-              <option value="Supplies">Packaging Supplies</option>
-              <option value="Transport">Transport / Delivery</option>
-              <option value="Others">Others</option>
-            </select>
+  <option value="Raw Materials">Raw Materials</option>
+  <option value="Utilities">Utilities</option>
+  <option value="Rent">Rent</option>
+  <option value="Salary">Salary / Wages</option>
+  <option value="Transport">Transport</option>
+  <option value="Supplies">Supplies</option>
+  <option value="Others">Others</option>
+</select>
+            <small>Select the appropriate category for this expense</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-peso-sign"></i> Amount (₱):</label>
-            <input type="number" step="0.01" v-model="editForm.amount" class="form-input" placeholder="0.00" />
+            <label><i class="fas fa-money-bill-wave"></i> Amount (₱) <span class="required">*</span></label>
+            <div class="currency-input">
+              <span class="currency"><i class="fas fa-peso-sign"></i></span>
+              <input type="number" step="0.01" v-model="editForm.amount" class="form-input" placeholder="0.00" />
+            </div>
+            <small>Enter the amount in Philippine Peso (₱)</small>
           </div>
+
           <div class="form-group">
-            <label><i class="fas fa-pen"></i> Additional Notes:</label>
-            <input type="text" v-model="editForm.note" placeholder="Optional details" class="form-input" />
+            <label><i class="fas fa-sticky-note"></i> Additional Notes</label>
+            <input type="text" v-model="editForm.note" placeholder="Optional - e.g., Receipt #12345" class="form-input" />
+            <small>Optional: Add additional details or reference numbers</small>
+          </div>
+
+          <div class="preview" v-if="editForm.amount > 0">
+            <strong><i class="fas fa-eye"></i> Summary Preview</strong>
+            <div class="preview-details">
+              <div class="preview-row">
+                <span><i class="fas fa-calendar-alt"></i> Date:</span>
+                <span class="preview-value">{{ editForm.date || 'Not set' }}</span>
+              </div>
+              <div class="preview-row">
+                <span><i class="fas fa-tag"></i> Category:</span>
+                <span class="preview-value">{{ editForm.category || 'Not set' }}</span>
+              </div>
+              <div class="preview-row">
+                <span><i class="fas fa-pencil-alt"></i> Description:</span>
+                <span class="preview-value">{{ editForm.description || 'Not set' }}</span>
+              </div>
+              <div class="preview-row total">
+                <span><i class="fas fa-money-bill-wave"></i> Total Amount:</span>
+                <span class="preview-amount"><i class="fas fa-peso-sign"></i> {{ formatNumber(editForm.amount) }}</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -215,6 +340,7 @@ const API_URL = 'https://inventory-system-backend-production-0549.up.railway.app
 
 const showAddModal = ref(false)
 const showEditModal = ref(false)
+
 const filters = ref({
   startDate: '',
   endDate: '',
@@ -238,20 +364,67 @@ const editForm = ref({
   note: ''
 })
 
-const totalExpenses = computed(() => {
-  let total = 0
-  for (const exp of store.expenses) {
-    total += Number(exp.amount)
+const currentMonth = new Date().toLocaleString('en-US', { month: 'long' })
+const currentYear = new Date().getFullYear()
+
+const monthlyTotal = computed(() => {
+  const now = new Date()
+  const month = now.getMonth()
+  const year = now.getFullYear()
+  return store.expenses
+    .filter(e => {
+      const d = new Date(e.date)
+      return d.getMonth() === month && d.getFullYear() === year
+    })
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+})
+
+const yearTotal = computed(() => {
+  const year = new Date().getFullYear()
+  return store.expenses
+    .filter(e => new Date(e.date).getFullYear() === year)
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+})
+
+const categoriesCount = computed(() => {
+  const cats = new Set()
+  store.expenses.forEach(e => cats.add(e.category))
+  return cats.size
+})
+
+const filteredExpenses = computed(() => {
+  let result = store.expenses
+  
+  if (filters.value.startDate) {
+    result = result.filter(e => e.date >= filters.value.startDate)
   }
-  return total
+  if (filters.value.endDate) {
+    result = result.filter(e => e.date <= filters.value.endDate)
+  }
+  if (filters.value.category) {
+    result = result.filter(e => e.category === filters.value.category)
+  }
+  
+  return result
+})
+
+const filteredTotal = computed(() => {
+  return filteredExpenses.value.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
 })
 
 const formatNumber = (num) => {
   return num?.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'
 }
 
+const formatDate = (date) => {
+  if (!date) return '-'
+  const d = new Date(date)
+  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 const getCategoryIcon = (category) => {
   const icons = {
+    'Raw Materials': 'fas fa-cubes',
     'Rent': 'fas fa-building',
     'Utilities': 'fas fa-bolt',
     'Salary': 'fas fa-users',
@@ -264,6 +437,7 @@ const getCategoryIcon = (category) => {
 
 const getCategoryClass = (category) => {
   const classes = {
+    'Raw Materials': 'cat-materials',
     'Rent': 'cat-rent',
     'Utilities': 'cat-utilities',
     'Salary': 'cat-salary',
@@ -280,14 +454,26 @@ const loadExpenses = async () => {
   if (filters.value.endDate) params.endDate = filters.value.endDate
   if (filters.value.category) params.category = filters.value.category
   await store.fetchExpenses(params)
-  
-  console.log('Expenses loaded:', store.expenses)
-  
-  let total = 0
-  for (const exp of store.expenses) {
-    total += exp.amount
+}
+
+const clearFilters = () => {
+  filters.value = {
+    startDate: '',
+    endDate: '',
+    category: ''
   }
-  console.log('Total computed manually:', total)
+  loadExpenses()
+}
+
+const openAddModal = () => {
+  expenseForm.value = {
+    date: new Date().toISOString().split('T')[0],
+    description: '',
+    category: 'Others',
+    amount: 0,
+    note: ''
+  }
+  showAddModal.value = true
 }
 
 const saveExpense = async () => {
@@ -304,15 +490,6 @@ const saveExpense = async () => {
   await store.addExpense(expenseData)
   showAddModal.value = false
   showToast('Expense added successfully!', 'success')
-  
-  expenseForm.value = {
-    date: new Date().toISOString().split('T')[0],
-    description: '',
-    category: 'Others',
-    amount: 0,
-    note: ''
-  }
-  
   await loadExpenses()
   await store.fetchDashboard()
 }
@@ -381,15 +558,6 @@ const deleteExpense = async (id) => {
   }
 }
 
-const clearFilters = () => {
-  filters.value = {
-    startDate: '',
-    endDate: '',
-    category: ''
-  }
-  loadExpenses()
-}
-
 onMounted(() => {
   loadExpenses()
 })
@@ -415,6 +583,7 @@ onMounted(() => {
 .header-left h3 {
   margin-bottom: 0.25rem;
   color: #1a2a3a;
+  font-weight: 700;
 }
 
 .header-left h3 i {
@@ -423,14 +592,10 @@ onMounted(() => {
 }
 
 .header-left p {
-  color: #666;
+  color: #333;
   font-size: 0.85rem;
+  font-weight: 500;
   margin: 0;
-}
-
-.header-left p i {
-  margin-right: 4px;
-  color: #2c3e50;
 }
 
 .btn-add {
@@ -443,19 +608,68 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .btn-add:hover {
   background: #1e7e34;
 }
 
-.filter-section {
-  background: #f4f6f8;
-  padding: 1.5rem;
-  border-radius: 8px;
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
   margin-bottom: 1.5rem;
-  border: 1px solid #e2e6ea;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  border-left: 4px solid #2c3e50;
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+  width: 45px;
+  height: 45px;
+  background: #edf2f7;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2c3e50;
+}
+
+.stat-info h4 {
+  font-size: 0.7rem;
+  color: #333;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.stat-info .value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a2a3a;
+}
+
+.stat-info small {
+  font-size: 0.65rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.filter-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #dee2e6;
 }
 
 .filter-row {
@@ -473,13 +687,19 @@ onMounted(() => {
 
 .filter-group label {
   font-size: 0.75rem;
-  font-weight: bold;
-  color: #4a5568;
+  font-weight: 700;
+  color: #1a2a3a;
 }
 
 .filter-group label i {
   margin-right: 4px;
   color: #2c3e50;
+}
+
+.filter-group small {
+  font-size: 0.6rem;
+  color: #555;
+  font-weight: 500;
 }
 
 .filter-input {
@@ -488,66 +708,57 @@ onMounted(() => {
   border-radius: 6px;
   min-width: 150px;
   background: white;
+  font-weight: 500;
+  color: #1a2a3a;
 }
 
 .filter-input:focus {
   outline: none;
   border-color: #2c3e50;
-  box-shadow: 0 0 0 2px rgba(44,62,80,0.1);
+}
+
+/* Input icons */
+.input-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  left: 10px;
+  color: #6c757d;
+  font-size: 0.8rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.filter-input.with-icon {
+  padding-left: 32px;
+  width: 100%;
+  min-width: 150px;
+}
+
+.filter-results {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #155724;
 }
 
 .btn-clear {
-  background: #718096;
+  background: #6c757d;
   color: white;
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  font-weight: 600;
 }
 
 .btn-clear:hover {
-  background: #4a5568;
-}
-
-.total-card {
-  background: #2c3e50;
-  color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.total-icon {
-  font-size: 2rem;
-  width: 60px;
-  height: 60px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffc107;
-}
-
-.total-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.total-info span {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-.total-info strong {
-  font-size: 2rem;
-  color: #ffc107;
+  background: #5a6268;
 }
 
 .table-responsive {
@@ -564,67 +775,90 @@ onMounted(() => {
 .expenses-table th {
   background: #2c3e50;
   padding: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: white;
-  border-bottom: 2px solid #1a252f;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
 }
 
 .expenses-table td {
   padding: 10px;
   border-bottom: 1px solid #e2e8f0;
-  color: #2d3748;
+  color: #1a2a3a;
+  font-weight: 500;
 }
 
 .expenses-table tr:hover td {
   background: #f7fafc;
 }
 
+.date-cell {
+  font-weight: 600;
+  color: #1a2a3a;
+}
+
+.desc-cell {
+  font-weight: 600;
+  color: #1a2a3a;
+}
+
 .amount-cell {
-  font-weight: bold;
+  font-weight: 700;
   color: #dc3545;
 }
 
-.amount-cell i {
-  margin-right: 2px;
+.note-cell {
+  font-weight: 500;
+  color: #1a2a3a;
 }
 
 .category-badge {
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
+.cat-materials { background: #e3f2fd; color: #0d47a1; }
+.cat-rent { background: #f3e5f5; color: #4a148c; }
+.cat-utilities { background: #fff3e0; color: #bf360c; }
+.cat-salary { background: #e8f5e9; color: #1b5e20; }
+.cat-supplies { background: #e0f2f1; color: #004d40; }
+.cat-transport { background: #fff8e1; color: #f57f17; }
+.cat-others { background: #f5f5f5; color: #424242; }
+
 .note-text {
   font-size: 0.8rem;
-  color: #718096;
-}
-
-.note-text i {
-  margin-right: 4px;
+  font-weight: 500;
+  color: #1a2a3a;
 }
 
 .no-note {
-  color: #cbd5e0;
+  color: #adb5bd;
+  font-weight: 400;
 }
 
 .action-cell {
   display: flex;
   gap: 5px;
-  justify-content: center;
+}
+
+.btn-edit, .btn-delete {
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .btn-edit {
   background: #17a2b8;
   color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.75rem;
 }
 
 .btn-edit:hover {
@@ -634,11 +868,6 @@ onMounted(() => {
 .btn-delete {
   background: #dc3545;
   color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.75rem;
 }
 
 .btn-delete:hover {
@@ -648,25 +877,39 @@ onMounted(() => {
 .empty-row {
   text-align: center;
   padding: 40px;
-  color: #a0aec0;
+  color: #6c757d;
 }
 
 .empty-row i {
   font-size: 2rem;
   display: block;
   margin-bottom: 10px;
-  color: #cbd5e0;
+  color: #adb5bd;
 }
 
-/* Category colors - professional but distinct */
-.cat-rent { background: #e3f2fd; color: #1565c0; }
-.cat-utilities { background: #e8f5e9; color: #2e7d32; }
-.cat-salary { background: #f3e5f5; color: #6a1b9a; }
-.cat-supplies { background: #fff3e0; color: #e65100; }
-.cat-transport { background: #e0f2f1; color: #00695c; }
-.cat-others { background: #f5f5f5; color: #616161; }
+.empty-row p {
+  font-size: 0.8rem;
+  margin-top: 5px;
+  color: #6c757d;
+}
 
-/* Modal */
+.total-row {
+  background: #f8f9fa;
+  font-weight: 700;
+}
+
+.total-label {
+  text-align: right;
+  font-size: 0.9rem;
+  color: #1a2a3a;
+}
+
+.total-amount {
+  font-size: 1.1rem;
+  color: #28a745;
+  font-weight: 700;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -683,23 +926,31 @@ onMounted(() => {
 .modal-content {
   background: white;
   border-radius: 12px;
-  width: 500px;
+  width: 480px;
   max-width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-.modal-header {
+.expense-modal .modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
   background: #2c3e50;
   color: white;
   border-radius: 12px 12px 0 0;
 }
 
-.modal-header h3 i {
-  margin-right: 8px;
+.header-icon {
+  font-size: 1.3rem;
+}
+
+.modal-header h3 {
+  flex: 1;
+  margin: 0;
+  font-weight: 700;
+  color: white;
 }
 
 .close-btn {
@@ -728,10 +979,10 @@ onMounted(() => {
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
+  margin-bottom: 0.4rem;
+  font-weight: 700;
   font-size: 0.85rem;
-  color: #4a5568;
+  color: #1a2a3a;
 }
 
 .form-group label i {
@@ -739,34 +990,108 @@ onMounted(() => {
   color: #2c3e50;
 }
 
+.required {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+.form-group small {
+  font-size: 0.7rem;
+  color: #555;
+  font-weight: 500;
+  display: block;
+  margin-top: 4px;
+}
+
 .form-input {
   width: 100%;
-  padding: 8px;
+  padding: 8px 12px;
   border: 1px solid #cbd5e0;
-  border-radius: 4px;
-  background: white;
+  border-radius: 6px;
+  font-weight: 500;
+  color: #1a2a3a;
 }
 
 .form-input:focus {
   outline: none;
   border-color: #2c3e50;
-  box-shadow: 0 0 0 2px rgba(44,62,80,0.1);
+}
+
+.currency-input {
+  position: relative;
+}
+
+.currency {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: #1a2a3a;
+}
+
+.currency-input .form-input {
+  padding-left: 28px;
+}
+
+.preview {
+  background: #f0f2f5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.preview strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: #1a2a3a;
+}
+
+.preview-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 2px 0;
+  font-weight: 500;
+  color: #1a2a3a;
+}
+
+.preview-value {
+  font-weight: 600;
+  color: #1a2a3a;
+}
+
+.preview-row.total {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #ddd;
+  font-weight: 700;
+}
+
+.preview-amount {
+  font-weight: 700;
+  color: #28a745;
 }
 
 .btn-cancel {
-  background: #718096;
+  background: #6c757d;
   color: white;
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  font-weight: 600;
 }
 
 .btn-cancel:hover {
-  background: #4a5568;
+  background: #5a6268;
 }
 
 .btn-save {
@@ -776,16 +1101,14 @@ onMounted(() => {
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  font-weight: 600;
 }
 
 .btn-save:hover {
   background: #1a252f;
 }
-/* PAMPALIIT LANG NG EXPENSES TRACKER - IDAGDAG SA DULO */
 
+/* Compact styles */
 .card {
   padding: 0.8rem !important;
 }
@@ -797,7 +1120,6 @@ onMounted(() => {
 
 .header-left h3 {
   font-size: 0.95rem !important;
-  margin-bottom: 0.15rem !important;
 }
 
 .header-left p {
@@ -811,7 +1133,6 @@ onMounted(() => {
 
 .filter-section {
   padding: 0.6rem !important;
-  margin-bottom: 0.8rem !important;
 }
 
 .filter-row {
@@ -828,29 +1149,14 @@ onMounted(() => {
   min-width: 120px !important;
 }
 
-.btn-clear {
-  padding: 4px 12px !important;
+.filter-input.with-icon {
+  padding-left: 28px !important;
+  min-width: 120px !important;
+}
+
+.input-icon {
   font-size: 0.65rem !important;
-}
-
-.total-card {
-  padding: 0.6rem 1rem !important;
-  margin-bottom: 0.8rem !important;
-  gap: 0.6rem !important;
-}
-
-.total-icon {
-  width: 40px !important;
-  height: 40px !important;
-  font-size: 1.2rem !important;
-}
-
-.total-info span {
-  font-size: 0.65rem !important;
-}
-
-.total-info strong {
-  font-size: 1.2rem !important;
+  left: 8px !important;
 }
 
 .expenses-table th {
@@ -863,34 +1169,11 @@ onMounted(() => {
   font-size: 0.7rem !important;
 }
 
-.category-badge {
-  padding: 2px 8px !important;
-  font-size: 0.6rem !important;
-}
-
-.amount-cell {
-  font-size: 0.7rem !important;
-}
-
-.note-text {
-  font-size: 0.65rem !important;
-}
-
 .btn-edit, .btn-delete {
   padding: 3px 8px !important;
   font-size: 0.6rem !important;
 }
 
-.empty-row {
-  padding: 1rem !important;
-  font-size: 0.7rem !important;
-}
-
-.empty-row i {
-  font-size: 1.2rem !important;
-}
-
-/* Modal - mas maliit */
 .modal-content {
   width: 400px !important;
 }
@@ -917,7 +1200,6 @@ onMounted(() => {
 
 .form-group label {
   font-size: 0.65rem !important;
-  margin-bottom: 0.2rem !important;
 }
 
 .form-input {
@@ -925,8 +1207,25 @@ onMounted(() => {
   font-size: 0.65rem !important;
 }
 
-.btn-cancel, .btn-save {
-  padding: 4px 12px !important;
-  font-size: 0.65rem !important;
+.stats-grid {
+  gap: 0.6rem !important;
+}
+
+.stat-card {
+  padding: 0.4rem 0.6rem !important;
+}
+
+.stat-icon {
+  width: 35px !important;
+  height: 35px !important;
+  font-size: 1rem !important;
+}
+
+.stat-info h4 {
+  font-size: 0.55rem !important;
+}
+
+.stat-info .value {
+  font-size: 0.9rem !important;
 }
 </style>

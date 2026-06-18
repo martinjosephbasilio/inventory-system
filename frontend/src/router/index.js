@@ -60,6 +60,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+  path: '/raw-materials',
+  name: 'RawMaterials',
+  component: () => import('../views/RawMaterials.vue'),
+  meta: { requiresAuth: true }
+},
+    {
       path: '/income',
       name: 'IncomeStatement',
       component: () => import('../views/IncomeStatement.vue'),

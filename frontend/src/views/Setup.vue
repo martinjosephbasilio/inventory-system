@@ -32,15 +32,15 @@
         <table class="pro-table">
           <thead>
             <tr>
-              <th><i class="fas fa-barcode"></i> Item Code</th>
-              <th><i class="fas fa-box"></i> Item Name</th>
-              <th><i class="fas fa-tags"></i> Category</th>
-              <th><i class="fas fa-cubes"></i> Pack Size</th>
-              <th><i class="fas fa-chart-line"></i> Selling Price</th>
-              <th><i class="fas fa-warehouse"></i> Stock</th>
-              <th><i class="fas fa-flag"></i> Reorder</th>
-              <th><i class="fas fa-info-circle"></i> Status</th>
-              <th><i class="fas fa-cog"></i> Actions</th>
+              <th><i class="fas fa-barcode"></i> <strong>Item Code</strong></th>
+              <th><i class="fas fa-box"></i> <strong>Item Name</strong></th>
+              <th><i class="fas fa-tags"></i> <strong>Category</strong></th>
+              <th><i class="fas fa-cubes"></i> <strong>Pack Size</strong></th>
+              <th><i class="fas fa-chart-line"></i> <strong>Selling Price</strong></th>
+              <th><i class="fas fa-warehouse"></i> <strong>Stock</strong></th>
+              <th><i class="fas fa-flag"></i> <strong>Reorder</strong></th>
+              <th><i class="fas fa-info-circle"></i> <strong>Status</strong></th>
+              <th><i class="fas fa-cog"></i> <strong>Actions</strong></th>
             </tr>
           </thead>
           <tbody>
@@ -49,7 +49,7 @@
                 <code class="item-code">{{ item.id }}</code>
                </td>
               <td class="name-cell">
-                <div class="item-name">{{ item.name }}</div>
+                <div class="item-name"><strong>{{ item.name }}</strong></div>
                </td>
               <td>
                 <span :class="['category-badge', getCategoryClass(item.category)]">
@@ -120,7 +120,7 @@
           <div class="header-icon">
             <i :class="isEditing ? 'fas fa-edit' : 'fas fa-plus-circle'"></i>
           </div>
-          <h3>{{ isEditing ? 'Edit Product' : 'Add New Product' }}</h3>
+          <h3><strong>{{ isEditing ? 'Edit Product' : 'Add New Product' }}</strong></h3>
           <button class="modal-close" @click="closeModal">
             <i class="fas fa-times"></i>
           </button>
@@ -128,20 +128,20 @@
 
         <div class="modal-body">
           <div class="form-tabs">
-            <div class="tab active"><i class="fas fa-info-circle"></i> Basic Info</div>
-            <div class="tab"><i class="fas fa-chart-line"></i> Inventory</div>
+            <div class="tab active"><i class="fas fa-info-circle"></i> <strong>Basic Info</strong></div>
+            <div class="tab"><i class="fas fa-chart-line"></i> <strong>Inventory</strong></div>
           </div>
 
           <div class="form-section">
             <div class="form-row">
               <div class="form-group">
-                <label>Item Code / SKU <span class="required">*</span></label>
+                <label><strong><i class="fas fa-barcode"></i> Item Code / SKU</strong> <span class="required">*</span></label>
                 <input type="text" v-model="form.id" :disabled="isEditing" placeholder="e.g., ITM-00001"
                   class="form-control" />
                 <small><i class="fas fa-magic"></i> Auto-generated for new items</small>
               </div>
               <div class="form-group">
-                <label>Item Name <span class="required">*</span></label>
+                <label><strong><i class="fas fa-box"></i> Item Name</strong> <span class="required">*</span></label>
                 <input type="text" v-model="form.name" placeholder="e.g., Corrugated Box 10x10x10"
                   class="form-control" />
               </div>
@@ -149,7 +149,7 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label><i class="fas fa-tags"></i> Category</label>
+                <label><strong><i class="fas fa-tags"></i> Category</strong></label>
                 <select v-model="form.category" class="form-control">
                   <option value="Boxes">Boxes & Cartons</option>
                   <option value="Plastics">Plastics & Containers</option>
@@ -162,7 +162,7 @@
                 </select>
               </div>
               <div class="form-group">
-                <label><i class="fas fa-ruler-combined"></i> Unit of Measure:</label>
+                <label><strong><i class="fas fa-ruler-combined"></i> Unit of Measure</strong></label>
                 <select v-model="form.unit" class="form-control">
                   <option value="pcs">Pieces (pcs)</option>
                   <option value="rolls">Rolls</option>
@@ -175,12 +175,12 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label><i class="fas fa-cubes"></i> Pack Size </label>
+                <label><strong><i class="fas fa-cubes"></i> Pack Size</strong></label>
                 <input type="number" v-model.number="form.pack_size" min="1" class="form-control" />
                 <small>How many pieces per pack?</small>
               </div>
               <div class="form-group">
-                <label><i class="fas fa-chart-line"></i> Sales Type</label>
+                <label><strong><i class="fas fa-chart-line"></i> Sales Type</strong></label>
                 <select v-model="form.type" class="form-control">
                   <option value="Both">Both (Wholesale + Retail)</option>
                   <option value="Retail">Retail Only</option>
@@ -191,47 +191,57 @@
 
             <!-- PRICING SECTION - SELLING PRICE ONLY -->
             <div class="price-section">
-              <div class="section-title"><i class="fas fa-coins"></i> Pricing (Philippine Peso)</div>
+              <div class="section-title"><i class="fas fa-coins"></i> <strong>Pricing (Philippine Peso)</strong></div>
               <div class="form-row">
                 <div class="form-group">
-  <label>Selling Price (per Pack)</label>
-  <div class="currency-input">
-    <span class="currency">₱</span>
-    <input type="number" step="0.01" v-model.number="form.sell_pack" class="form-control" placeholder="0.00" />
-  </div>
-  
-</div>
+                  <label><strong><i class="fas fa-tag"></i> Selling Price (per Pack)</strong></label>
+                  <div class="currency-input">
+                    <span class="currency"><i class="fas fa-peso-sign"></i></span>
+                    <input type="number" step="0.01" v-model.number="form.sell_pack" class="form-control" placeholder="0.00" />
+                  </div>
+                  <small>Price per pack sold to customers</small>
+                </div>
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label><i class="fas fa-flag-checkered"></i> Reorder Level (in packs)</label>
+                <label><strong><i class="fas fa-flag-checkered"></i> Reorder Level (in packs)</strong></label>
                 <input type="number" v-model.number="form.reorder_packs" min="0" class="form-control" />
-                <small>Alert when stock falls below this level (in packs)</small>
+                <small><i class="fas fa-exclamation-triangle"></i> Alert when stock falls below this level</small>
               </div>
               <div class="form-group" v-if="!isEditing">
-                <label><i class="fas fa-database"></i> Initial Stock (in packs)</label>
+                <label><strong><i class="fas fa-database"></i> Initial Stock (in packs)</strong></label>
                 <input type="number" v-model.number="form.initial_stock_packs" min="0" class="form-control" />
                 <small>Starting inventory in packs</small>
               </div>
             </div>
           </div>
 
+          <!-- SUMMARY PREVIEW -->
           <div class="preview-card">
-            <div class="preview-header"><i class="fas fa-eye"></i> Summary Preview</div>
+            <div class="preview-header"><i class="fas fa-eye"></i> <strong>Summary Preview</strong></div>
             <div class="preview-content">
               <div class="preview-row">
-                <span>{{ form.name || 'Item Name' }}</span>
-                <code class="preview-code">{{ form.id || 'ITEM-CODE' }}</code>
+                <span><strong>Item Name:</strong></span>
+                <span>{{ form.name || 'Not set' }}</span>
               </div>
               <div class="preview-row">
-                <span><i class="fas fa-cubes"></i> Pack: {{ form.pack_size }} pcs/pack</span>
-                <span><i class="fas fa-tag"></i> Selling Price: ₱{{ formatNumber(form.sell_pack) }}/pack</span>
+                <span><strong>Item Code:</strong></span>
+                <code class="preview-code">{{ form.id || 'Not set' }}</code>
               </div>
               <div class="preview-row">
-  <span><i class="fas fa-flag"></i> Reorder at: {{ form.reorder_packs }} packs ({{ form.reorder_packs * form.pack_size }} pcs)</span>
-</div>
+                <span><strong>Pack Size:</strong></span>
+                <span>{{ form.pack_size }} pcs/pack</span>
+              </div>
+              <div class="preview-row">
+                <span><strong>Selling Price:</strong></span>
+                <span><i class="fas fa-peso-sign"></i> {{ formatNumber(form.sell_pack) }}/pack</span>
+              </div>
+              <div class="preview-row">
+                <span><strong>Reorder Level:</strong></span>
+                <span>{{ form.reorder_packs || 10 }} packs ({{ (form.reorder_packs || 10) * form.pack_size }} pcs)</span>
+              </div>
             </div>
           </div>
         </div>
@@ -274,7 +284,7 @@ const form = ref({
   initial_stock_packs: 0
 })
 
-// Low stock threshold in packs (20 packs = low stock)
+// Low stock threshold in packs
 const LOW_STOCK_THRESHOLD = 10
 
 // Get stock data from store.stock
@@ -286,7 +296,6 @@ const getItemStock = (itemId) => {
 const filteredItems = computed(() => {
   let items = store.items.map(item => {
     const stock = getItemStock(item.id)
-    // ✅ Kung walang value, default 10
     const reorderInPacks = item.reorder_packs || 10
     return {
       ...item,
@@ -297,8 +306,6 @@ const filteredItems = computed(() => {
       reorder_level: reorderInPacks * (item.pack_size || 1)
     }
   })
-  
-
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -415,6 +422,7 @@ const generateNextId = () => {
   const nextNum = (maxNum + 1).toString().padStart(5, '0')
   return `ITM-${nextNum}`
 }
+
 const openAddModal = () => {
   isEditing.value = false
   form.value = {
@@ -425,7 +433,7 @@ const openAddModal = () => {
     pack_size: 1,
     type: 'Both',
     sell_pack: 0,
-    reorder_packs: 10,  // ✅ Default para sa bagong item
+    reorder_packs: 10,
     initial_stock_packs: 0
   }
   showModal.value = true
@@ -444,7 +452,7 @@ const openEditModal = (item) => {
     pack_size: item.pack_size,
     type: item.type,
     sell_pack: item.sell_pack,
-    reorder_packs: item.reorder_packs,  // Diretsong gamitin
+    reorder_packs: item.reorder_packs,
     initial_stock_packs: 0
   }
   showModal.value = true
@@ -461,10 +469,8 @@ const saveItem = async () => {
     return
   }
   
-  // ✅ Para sa ADD: default ay 20, para sa EDIT: gamitin ang value
   let reorderPacks = form.value.reorder_packs
   
-  // Kung walang value (sa pag-add ng bagong item), default sa 20
   if (reorderPacks === undefined || reorderPacks === null || reorderPacks === 0) {
     reorderPacks = 10
   }

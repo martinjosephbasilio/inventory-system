@@ -2,7 +2,7 @@
   <div>
     <div class="card">
       <div class="header-actions">
-        <h3><i class="fas fa-clipboard-list"></i> IN/OUT Transaction Log</h3>
+        <h3><i class="fas fa-clipboard-list"></i> <strong>IN/OUT Transaction Log</strong></h3>
         <p><i class="fas fa-chart-line"></i> Monitor all inventory movements for packaging materials</p>
       </div>
       
@@ -10,15 +10,15 @@
       <div class="filter-section">
         <div class="filter-row">
           <div class="filter-group">
-            <label><i class="fas fa-calendar-alt"></i> Start Date:</label>
+            <label><strong><i class="fas fa-calendar-alt"></i> Start Date</strong></label>
             <input type="date" v-model="filters.startDate" @change="loadMovements" class="filter-input" />
           </div>
           <div class="filter-group">
-            <label><i class="fas fa-calendar-alt"></i> End Date:</label>
+            <label><strong><i class="fas fa-calendar-alt"></i> End Date</strong></label>
             <input type="date" v-model="filters.endDate" @change="loadMovements" class="filter-input" />
           </div>
           <div class="filter-group">
-            <label><i class="fas fa-box"></i> Item:</label>
+            <label><strong><i class="fas fa-box"></i> Item</strong></label>
             <select v-model="filters.itemId" @change="loadMovements" class="filter-input">
               <option value="">All Items</option>
               <option v-for="item in store.items" :key="item.id" :value="item.id">
@@ -27,7 +27,7 @@
             </select>
           </div>
           <div class="filter-group">
-            <label><i class="fas fa-exchange-alt"></i> Type:</label>
+            <label><strong><i class="fas fa-exchange-alt"></i> Type</strong></label>
             <select v-model="filters.type" @change="loadMovements" class="filter-input">
               <option value="">All</option>
               <option value="IN">IN (Received)</option>
@@ -35,10 +35,10 @@
             </select>
           </div>
           <button @click="clearFilters" class="btn-clear">
-            <i class="fas fa-eraser"></i> Clear Filters
+            <i class="fas fa-eraser"></i> <strong>Clear Filters</strong>
           </button>
           <button @click="loadMovements" class="btn-refresh">
-            <i class="fas fa-sync-alt"></i> Refresh
+            <i class="fas fa-sync-alt"></i> <strong>Refresh</strong>
           </button>
         </div>
       </div>
@@ -48,21 +48,21 @@
         <div class="summary-card">
           <div class="summary-icon"><i class="fas fa-arrow-down"></i></div>
           <div class="summary-info">
-            <span>Total IN</span>
+            <span><strong>Total IN</strong></span>
             <strong>{{ totalInBase }} <small>base units</small></strong>
           </div>
         </div>
         <div class="summary-card">
           <div class="summary-icon"><i class="fas fa-arrow-up"></i></div>
           <div class="summary-info">
-            <span>Total OUT</span>
+            <span><strong>Total OUT</strong></span>
             <strong>{{ totalOutBase }} <small>base units</small></strong>
           </div>
         </div>
         <div class="summary-card">
           <div class="summary-icon"><i class="fas fa-chart-line"></i></div>
           <div class="summary-info">
-            <span>Net Change</span>
+            <span><strong>Net Change</strong></span>
             <strong :class="netChange >= 0 ? 'positive' : 'negative'">
               {{ netChange >= 0 ? '+' : '' }}{{ netChange }}
             </strong>
@@ -71,7 +71,7 @@
         <div class="summary-card">
           <div class="summary-icon"><i class="fas fa-money-bill-wave"></i></div>
           <div class="summary-info">
-            <span>Total Sales</span>
+            <span><strong>Total Sales</strong></span>
             <strong>₱{{ formatNumber(totalSales) }}</strong>
           </div>
         </div>
@@ -82,53 +82,53 @@
         <table class="movements-table">
           <thead>
             <tr>
-              <th>DATE & TIME</th>
-              <th>TYPE</th>
-              <th>ITEM CODE</th>
-              <th>ITEM NAME</th>
-              <th>CUSTOMER / SUPPLIER</th>
-              <th>QTY</th>
-              <th>UNIT</th>
-              <th>BASE DELTA</th>
-              <th>UNIT PRICE</th>
-              <th>TOTAL SALES</th>
-              <th>REMARKS</th>
-              <th style="width: 80px">ACTION</th>
+              <th><strong>DATE & TIME</strong></th>
+              <th><strong>TYPE</strong></th>
+              <th><strong>ITEM CODE</strong></th>
+              <th><strong>ITEM NAME</strong></th>
+              <th><strong>CUSTOMER / SUPPLIER</strong></th>
+              <th><strong>QTY</strong></th>
+              <th><strong>UNIT</strong></th>
+              <th><strong>BASE DELTA</strong></th>
+              <th><strong>UNIT PRICE</strong></th>
+              <th><strong>TOTAL SALES</strong></th>
+              <th><strong>REMARKS</strong></th>
+              <th style="width: 80px"><strong>ACTION</strong></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="movement in filteredMovements" :key="movement.id">
               <td>
-                {{ formatDateTime(movement.datetime) }}
+                <strong>{{ formatDateTime(movement.datetime) }}</strong>
               </td>
               <td>
                 <span :class="movement.type === 'IN' ? 'badge-in' : 'badge-out'">
                   <i :class="movement.type === 'IN' ? 'fas fa-arrow-down' : 'fas fa-arrow-up'"></i>
-                  {{ movement.type }}
+                  <strong>{{ movement.type }}</strong>
                 </span>
               </td>
-              <td><code>{{ movement.item_id }}</code></td>
+              <td><code><strong>{{ movement.item_id }}</strong></code></td>
               <td><strong>{{ movement.item_name }}</strong></td>
               <td>
                 <strong>{{ movement.type === 'IN' ? 'Supplier' : (movement.customer_name || 'Walk-in Customer') }}</strong>
               </td>
-              <td>{{ movement.quantity }}</td>
-              <td>{{ movement.unit }}</td>
-              <td>{{ movement.base_delta }}</td>
-              <td>₱{{ formatNumber(movement.sell_price) }}</td>
-              <td>₱{{ formatNumber(movement.total_sales) }}</td>
+              <td><strong>{{ movement.quantity }}</strong></td>
+              <td><strong>{{ movement.unit }}</strong></td>
+              <td><strong>{{ movement.base_delta }}</strong></td>
+              <td><strong>₱{{ formatNumber(movement.sell_price) }}</strong></td>
+              <td><strong>₱{{ formatNumber(movement.total_sales) }}</strong></td>
               <td>
                 <span v-if="movement.note">
-                  <i class="fas fa-comment"></i> {{ movement.note }}
+                  <i class="fas fa-comment"></i> <strong>{{ movement.note }}</strong>
                 </span>
                 <span v-else class="no-note">—</span>
               </td>
               <td class="action-cell">
                 <button @click="openEditModal(movement)" class="btn-edit" title="Edit Transaction">
-                  <i class="fas fa-edit"></i>
+                  <i class="fas fa-edit"></i> <strong>Edit</strong>
                 </button>
                 <button @click="deleteMovement(movement.id, movement.item_name)" class="btn-delete" title="Delete Transaction">
-                  <i class="fas fa-trash-alt"></i>
+                  <i class="fas fa-trash-alt"></i> <strong>Delete</strong>
                 </button>
               </td>
             </tr>
@@ -146,7 +146,7 @@
     <div v-if="showEditModal" class="modal" @click.self="showEditModal = false">
       <div class="modal-content">
         <div class="modal-header">
-          <h3><i class="fas fa-edit"></i> Edit Transaction</h3>
+          <h3><i class="fas fa-edit"></i> <strong>Edit Transaction</strong></h3>
           <button class="close-btn" @click="showEditModal = false">
             <i class="fas fa-times"></i>
           </button>
@@ -161,12 +161,12 @@
           </div>
           
           <div class="form-group">
-            <label><i class="fas fa-calendar-alt"></i> Date & Time:</label>
+            <label><strong><i class="fas fa-calendar-alt"></i> Date & Time</strong></label>
             <input type="datetime-local" v-model="editForm.datetime" class="form-input" />
           </div>
           
           <div class="form-group">
-            <label><i class="fas fa-exchange-alt"></i> Type:</label>
+            <label><strong><i class="fas fa-exchange-alt"></i> Type</strong></label>
             <select v-model="editForm.type" class="form-input" @change="onTypeChange">
               <option value="IN">IN (Received)</option>
               <option value="OUT">OUT (Issued)</option>
@@ -174,17 +174,17 @@
           </div>
           
           <div class="form-group" v-if="editForm.type === 'OUT'">
-            <label><i class="fas fa-user"></i> Customer Name:</label>
+            <label><strong><i class="fas fa-user"></i> Customer Name</strong></label>
             <input type="text" v-model="editForm.customer_name" placeholder="Customer name" class="form-input" />
           </div>
           
           <div class="form-row">
             <div class="form-group">
-              <label><i class="fas fa-sort-amount-up"></i> Quantity:</label>
+              <label><strong><i class="fas fa-sort-amount-up"></i> Quantity</strong></label>
               <input type="number" v-model="editForm.quantity" min="1" class="form-input" @change="recalculateTotal" />
             </div>
             <div class="form-group">
-              <label><i class="fas fa-cubes"></i> Unit:</label>
+              <label><strong><i class="fas fa-cubes"></i> Unit</strong></label>
               <select v-model="editForm.unit" class="form-input" @change="recalculateTotal">
                 <option value="BASE">Piece (pcs)</option>
                 <option value="PACK">Pack</option>
@@ -193,12 +193,12 @@
           </div>
           
           <div class="form-group" v-if="editForm.type === 'OUT'">
-            <label><i class="fas fa-tag"></i> Unit Price (per piece):</label>
+            <label><strong><i class="fas fa-tag"></i> Unit Price (per piece)</strong></label>
             <input type="number" step="0.01" v-model="editForm.sell_price" class="form-input" @change="recalculateTotal" />
           </div>
           
           <div class="form-group">
-            <label><i class="fas fa-pen"></i> Remarks:</label>
+            <label><strong><i class="fas fa-pen"></i> Remarks</strong></label>
             <input type="text" v-model="editForm.note" placeholder="Optional" class="form-input" />
           </div>
           
@@ -215,7 +215,7 @@
             <i class="fas fa-times"></i> Cancel
           </button>
           <button class="btn-save" @click="updateMovement">
-            <i class="fas fa-save"></i> Save Changes
+            <i class="fas fa-save"></i> <strong>Save Changes</strong>
           </button>
         </div>
       </div>
@@ -259,7 +259,16 @@ const editForm = ref({
 const filteredMovements = computed(() => {
   let result = store.movements || []
   
-  // ✅ I-exclude ang Stock Adjustment sa table display
+  result = result.filter(m => {
+    if (m.type === 'RECEIVED' || m.type === 'USED' || m.type === 'WASTE') {
+      return false
+    }
+    if (m.item_id && m.item_id.startsWith('MAT-')) {
+      return false
+    }
+    return true
+  })
+  
   result = result.filter(m => m.customer_name !== 'Stock Adjustment')
   
   if (filters.value.type && result.length) {
@@ -268,33 +277,36 @@ const filteredMovements = computed(() => {
   return result
 })
 
+const netChange = computed(() => {
+  return totalInBase.value - totalOutBase.value
+})
 
-// Total IN - I-exclude ang mga correction/sobrang IN
 const totalInBase = computed(() => {
-  // ✅ Gamitin ang cutoff date kung kailan naging tama ang stock
-  // I-set ito sa petsa bago ka nag-correct
-  const cutoffDate = new Date('2026-06-15') // Palitan sa tamang petsa
-  
   let total = 0
   for (const m of filteredMovements.value) {
     if (m.type === 'IN') {
-      const movementDate = new Date(m.datetime)
-      // ✅ I-exclude ang mga IN bago ang cutoff date
-      if (movementDate >= cutoffDate) {
-        total += Number(m.base_delta) || 0
-      }
+      total += Number(m.base_delta) || 0
     }
   }
   return total
 })
 
-// Total OUT (same logic)
-// Total OUT - walang date filter
 const totalOutBase = computed(() => {
   let total = 0
   for (const m of filteredMovements.value) {
-    if (m.type === 'OUT' && m.customer_name !== 'Stock Adjustment') {
+    if (m.type === 'OUT') {
       total += Number(m.base_delta) || 0
+    }
+  }
+  return total
+})
+
+const totalSales = computed(() => {
+  let total = 0
+  for (const m of filteredMovements.value) {
+    if (m.type === 'OUT') {
+      const salesAmount = Number(m.total_sales) || 0
+      total += salesAmount
     }
   }
   return total
@@ -511,8 +523,8 @@ onMounted(() => {
 
 .filter-group label {
   font-size: 0.7rem;
-  font-weight: bold;
-  color: #4a5568;
+  font-weight: 700;
+  color: #1a2a3a;
 }
 
 .filter-group label i {
@@ -527,6 +539,7 @@ onMounted(() => {
   min-width: 130px;
   background: white;
   font-size: 0.7rem;
+  font-weight: 500;
 }
 
 .filter-input:focus {
@@ -546,6 +559,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .btn-clear {
@@ -592,7 +606,8 @@ onMounted(() => {
 
 .summary-info span {
   font-size: 0.6rem;
-  color: #718096;
+  color: #1a2a3a;
+  font-weight: 700;
 }
 
 .summary-info strong {
@@ -629,7 +644,7 @@ onMounted(() => {
   background: #2c3e50;
   padding: 8px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   color: white;
   border-bottom: 2px solid #1a252f;
 }
@@ -638,7 +653,7 @@ onMounted(() => {
   padding: 6px;
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
-  color: #2d3748;
+  color: #1a2a3a;
   background: white;
 }
 
@@ -652,7 +667,7 @@ onMounted(() => {
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.6rem;
-  font-weight: bold;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -664,7 +679,7 @@ onMounted(() => {
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.6rem;
-  font-weight: bold;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -677,6 +692,7 @@ code {
   font-size: 0.65rem;
   font-family: monospace;
   color: #2d3748;
+  font-weight: 600;
 }
 
 .no-note {
@@ -710,6 +726,7 @@ code {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.6rem;
+  font-weight: 600;
 }
 
 .btn-edit:hover {
@@ -724,6 +741,7 @@ code {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.6rem;
+  font-weight: 600;
 }
 
 .btn-delete:hover {
@@ -763,6 +781,10 @@ code {
   border-radius: 12px 12px 0 0;
 }
 
+.modal-header h3 {
+  font-weight: 700;
+}
+
 .modal-header h3 i {
   margin-right: 8px;
 }
@@ -794,9 +816,9 @@ code {
 .form-group label {
   display: block;
   margin-bottom: 0.3rem;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 0.7rem;
-  color: #4a5568;
+  color: #1a2a3a;
 }
 
 .form-group label i {
@@ -811,6 +833,7 @@ code {
   border-radius: 4px;
   background: white;
   font-size: 0.7rem;
+  font-weight: 500;
 }
 
 .form-input:focus {
@@ -873,6 +896,7 @@ code {
   align-items: center;
   gap: 4px;
   font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .btn-cancel:hover {
@@ -890,6 +914,7 @@ code {
   align-items: center;
   gap: 4px;
   font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .btn-save:hover {
